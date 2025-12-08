@@ -1,0 +1,98 @@
+# =============================================================================
+# Docker Ignore - Lola Jiménez Studio
+# =============================================================================
+# Archivos excluidos del build de Docker para optimizar tamaño de imagen
+# =============================================================================
+
+# Environment files (NUNCA incluir credenciales en imagen)
+.env
+.env.local
+.env.production
+.env.*
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation (no necesaria en runtime)
+docs/
+*.md
+!README.md
+
+# Tests (no necesarios en producción)
+tests/
+test_*.py
+*_test.py
+pytest.ini
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Personal/Development files
+.guus/
+.gemini/
+.claude/
+.backups/
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Database files (no incluir datos locales)
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+backup_*.sql
+
+# Media files (subir a B2, no incluir en imagen)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.mp4
+*.mp3
+*.wav
+*.ogg
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Jupyter
+*.ipynb
+.ipynb_checkpoints/
+
+# Frontend (si se despliega por separado)
+frontend/node_modules/
+frontend/.next/
+frontend/out/

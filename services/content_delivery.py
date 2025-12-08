@@ -2,7 +2,7 @@
 """
 content_delivery.py
 
-Servicio de entrega de contenido digital desde Oracle Cloud + Pushr CDN.
+Servicio de entrega de contenido digital usando Backblaze B2.
 Genera URLs firmadas con expiración para proteger contenido privado.
 """
 
@@ -11,38 +11,45 @@ import os
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 
+from services.backblaze_b2 import BackblazeB2Client, get_b2_client_from_env
+
 logger = logging.getLogger(__name__)
 
 
 class ContentDeliveryService:
     """
     Gestor de entrega de contenido digital.
-    Integra Oracle Object Storage + Pushr CDN para URLs seguras.
+    Integra Backblaze B2 para URLs seguras con expiración.
     """
 
     def __init__(
         self,
-        oracle_bucket: str,
-        pushr_api_key: str,
-        pushr_zone_id: str,
+        b2_client: Optional[BackblazeB2Client] = None,
         url_expiration_minutes: int = 30
     ):
         """
         Inicializa el servicio de entrega de contenido.
         
         Args:
-            oracle_bucket: Nombre del bucket de Oracle Cloud
-            pushr_api_key: API key de Pushr CDN
-            pushr_zone_id: ID de la zona de Pushr
+            b2_client: Cliente de Backblaze B2 (si no se proporciona, se crea desde env vars)
             url_expiration_minutes: Minutos de validez de URLs firmadas (default: 30)
                                     NOTA: Reducido de 24h para prevenir piratería
         """
-        self.oracle_bucket = oracle_bucket
-        self.pushr_api_key = pushr_api_key
-        self.pushr_zone_id = pushr_zone_id
+        if b2_client:
+            self.b2_client = b2_client
+        else:
+            try:
+                self.b2_client = get_b2_client_from_env()
+            except ValueError as e:
+                logger.warning(f"⚠️ No se pudo inicializar B2 client: {e}")
+                self.b2_client = None
+        
         self.url_expiration_minutes = url_expiration_minutes
         
-        logger.info("✅ ContentDeliveryService inicializado")
+        if self.b2_client:
+            logger.info("✅ ContentDeliveryService inicializado con Backblaze B2")
+        else:
+            logger.warning("⚠️ ContentDeliveryService sin B2 - funcionalidad limitada")
 
     async def get_product_url(
         self,
@@ -60,25 +67,32 @@ class ContentDeliveryService:
             URL firmada del contenido o None si falla
         """
         try:
-            # TODO: Implementar integración real con Oracle + Pushr
-            # 1. Mapear product_level a archivo en Oracle bucket
-            # 2. Generar URL firmada con expiración
-            # 3. Pasar URL por Pushr CDN para protección adicional
+            # Obtener path del archivo en B2
+            object_key = await self.get_product_mapping(product_level)
             
-            # Por ahora, retorna URL placeholder
-            logger.warning(f"⚠️ ContentDeliveryService.get_product_url() es un placeholder")
+            if not object_key:
+                logger.error(f"❌ No existe mapeo para nivel: {product_level}")
+                return None
             
-            expiration = datetime.now() + timedelta(minutes=self.url_expiration_minutes)
+            if not self.b2_client:
+                logger.error("❌ B2 client no disponible")
+                return None
             
-            # Placeholder URL (reemplazar con lógica real)
-            placeholder_url = (
-                f"https://cdn.lola-jimenez.studio/content/"
-                f"{product_level}_{user_id}.jpg?expires={int(expiration.timestamp())}"
+            # Generar URL firmada con expiración
+            expiration_seconds = self.url_expiration_minutes * 60
+            signed_url = self.b2_client.get_presigned_url(
+                object_key,
+                expiration=expiration_seconds
             )
             
-            logger.info(f"✅ URL generada para {user_id} - Nivel: {product_level}")
-            logger.info(f"⏰ URL expira en 30 minutos: {expiration.isoformat()}")
-            return placeholder_url
+            if signed_url:
+                expiration_time = datetime.now() + timedelta(minutes=self.url_expiration_minutes)
+                logger.info(f"✅ URL generada para {user_id} - Nivel: {product_level}")
+                logger.info(f"⏰ URL expira en {self.url_expiration_minutes} min: {expiration_time.isoformat()}")
+                return signed_url
+            else:
+                logger.error(f"❌ No se pudo generar URL firmada para: {object_key}")
+                return None
             
         except Exception as e:
             logger.error(f"❌ Error generando URL de producto: {e}")
@@ -117,6 +131,7 @@ class ContentDeliveryService:
                 "url": url,
                 "product_level": product_level,
                 "expires_at": expiration.isoformat(),
+                "expires_in_minutes": self.url_expiration_minutes,
                 "metadata": delivery_metadata or {}
             }
             
@@ -127,9 +142,48 @@ class ContentDeliveryService:
                 "error": str(e)
             }
 
+    async def upload_content(
+        self,
+        file_path: str,
+        product_level: str,
+        content_type: Optional[str] = None
+    ) -> Optional[str]:
+        """
+        Sube contenido al bucket de B2.
+        
+        Args:
+            file_path: Ruta local del archivo
+            product_level: Nivel de producto para determinar path en bucket
+            content_type: MIME type del archivo
+            
+        Returns:
+            URL del archivo subido o None si falla
+        """
+        if not self.b2_client:
+            logger.error("❌ B2 client no disponible para upload")
+            return None
+        
+        try:
+            object_key = f"products/{product_level}/{os.path.basename(file_path)}"
+            
+            result = self.b2_client.upload_file(
+                file_path,
+                object_key,
+                content_type=content_type
+            )
+            
+            if result:
+                logger.info(f"✅ Contenido subido: {object_key}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ Error subiendo contenido: {e}")
+            return None
+
     async def get_product_mapping(self, product_level: str) -> Optional[str]:
         """
-        Mapea nivel de producto a archivo en Oracle Storage.
+        Mapea nivel de producto a archivo en Backblaze B2.
         
         Args:
             product_level: Nivel (ej: "lingerie", "topless")
@@ -149,10 +203,17 @@ class ContentDeliveryService:
         
         return mapping.get(product_level)
 
-    async def health_check(self) -> Dict[str, bool]:
-        """Verifica conectividad con Oracle y Pushr"""
-        # TODO: Implementar checks reales de conectividad
+    async def health_check(self) -> Dict[str, Any]:
+        """Verifica conectividad con Backblaze B2"""
+        if not self.b2_client:
+            return {
+                "backblaze_b2": False,
+                "error": "B2 client no inicializado"
+            }
+        
+        b2_health = await self.b2_client.health_check()
+        
         return {
-            "oracle_storage": True,  # Placeholder
-            "pushr_cdn": True  # Placeholder
+            "backblaze_b2": b2_health.get("status") == "healthy",
+            "details": b2_health
         }
