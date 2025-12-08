@@ -11,7 +11,7 @@ dockerfilePath = "Dockerfile"
 
 [deploy]
 # Comando de inicio (usa variable $PORT de Railway)
-startCommand = "uvicorn api.run_fastapi:app --host 0.0.0.0 --port $PORT"
+startCommand = "sh -c 'uvicorn api.run_fastapi:app --host 0.0.0.0 --port ${PORT:-8000}'"
 
 # Health check para verificar que la app está funcionando
 healthcheckPath = "/health"
