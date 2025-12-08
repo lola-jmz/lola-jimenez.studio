@@ -1,0 +1,112 @@
+# Bot de Telegram "María" - .gitignore
+
+# Entorno virtual
+venv/
+env/
+ENV/
+.venv/
+
+# Variables de entorno y configuración
+.env
+.env.local
+.env.*.local
+
+# Credenciales y secretos
+*.key
+*.pem
+credentials.json
+secrets/
+
+# Base de datos
+*.db
+*.sqlite
+*.sqlite3
+db.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+*.cover
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Archivos temporales
+/tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+
+# Archivos de audio/imagen temporal
+*.ogg
+*.mp3
+*.wav
+*.m4a
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.gif
+
+# Excepciones: mantener carpetas pero no contenido
+!.gitkeep
+
+# Backups de base de datos
+backup_*.sql
+*.dump
+
+# Certificados SSL
+*.crt
+*.csr
+
+# Oracle Cloud Storage credentials (si se usan)
+oci_config
+oci_key.pem
+
+# Claude Code
+.claude/
+.claudeignore/
+.backups/
+
+# Gemini/Guus personal files
+.guus/
+.gemini/
+
+# Jupyter Notebooks
+*.ipynb_checkpoints/
