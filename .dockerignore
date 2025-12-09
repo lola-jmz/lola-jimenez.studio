@@ -36,8 +36,9 @@ __pycache__/
 *~
 .DS_Store
 
-# Documentation (no necesaria en runtime)
+# Documentation (no necesaria en runtime, EXCEPTO LOLA_FLASH.md)
 docs/
+!docs/LOLA_FLASH.md
 *.md
 !README.md
 
