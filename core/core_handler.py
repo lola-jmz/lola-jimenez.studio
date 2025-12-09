@@ -33,7 +33,9 @@ from database.database_pool import DatabasePool, ConversationRepository
 from core.state_machine import ConversationManager, EventType, ConversationState
 from services.security import SecurityManager
 from services.payment_validator import PaymentValidator
-from services.audio_transcriber import AudioTranscriber
+# Audio transcription temporarily disabled for Railway deployment
+# from services.audio_transcriber import AudioTranscriber
+AudioTranscriber = None  # Placeholder when disabled
 from services.error_handler import async_retry, with_fallback, gemini_rate_limiter
 from services.content_delivery import ContentDeliveryService
 from storage.redis_store import RedisStateStore
@@ -53,10 +55,10 @@ class LolaCoreHandler:
         conversation_manager: ConversationManager,
         security_manager: SecurityManager,
         payment_validator: PaymentValidator,
-        audio_transcriber: AudioTranscriber,
         content_delivery: ContentDeliveryService,
         redis_store: RedisStateStore,
-        gemini_api_key: str
+        gemini_api_key: str,
+        audio_transcriber: Optional[Any] = None  # Optional: disabled for Railway
     ):
         """
         Inicializa el handler con todos los servicios necesarios (Inyección de Dependencias).
@@ -267,6 +269,11 @@ class LolaCoreHandler:
             user_identifier: Identificador único del usuario
             audio_path: Ruta al archivo de audio
         """
+        # Verificar si la transcripción de audio está disponible
+        if self.audio_transcriber is None:
+            logger.warning(f"Transcripción de audio desactivada. Usuario: {user_identifier}")
+            return "Ay, las notas de voz están desactivadas por ahora haha. mejor escríbeme. 💬"
+        
         # 0. Obtener user_id numérico
         user_id = await self.conversation_repo.get_or_create_user_by_identifier(user_identifier)
 
