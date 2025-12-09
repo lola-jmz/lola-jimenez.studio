@@ -19,7 +19,8 @@ from core.state_machine import ConversationManager
 from core.core_handler import LolaCoreHandler
 from services.security import SecurityManager
 from services.payment_validator import PaymentValidator
-from services.audio_transcriber import AudioTranscriber
+# Audio transcription temporarily disabled for Railway deployment
+# from services.audio_transcriber import AudioTranscriber
 from services.content_delivery import ContentDeliveryService
 from storage.redis_store import RedisStateStore
 from api.websocket.connection_manager import ConnectionManager
@@ -38,9 +39,6 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-ORACLE_BUCKET = os.getenv("ORACLE_BUCKET", "lola-content")
-PUSHR_API_KEY = os.getenv("PUSHR_API_KEY", "")
-PUSHR_ZONE_ID = os.getenv("PUSHR_ZONE_ID", "")
 
 # Instancias globales (compartidas entre requests)
 db_pool: DatabasePool = None
@@ -79,12 +77,9 @@ async def lifespan(app: FastAPI):
         gemini_api_key=GEMINI_API_KEY,
         db_pool=db_pool.pool  # NUEVO: Activar anti-fraude P-Hash
     )
-    audio_transcriber = AudioTranscriber()
-    content_delivery = ContentDeliveryService(
-        oracle_bucket=ORACLE_BUCKET,
-        pushr_api_key=PUSHR_API_KEY,
-        pushr_zone_id=PUSHR_ZONE_ID
-    )
+    # Audio transcription disabled for Railway deployment
+    # audio_transcriber = AudioTranscriber()
+    content_delivery = ContentDeliveryService()  # Uses Backblaze B2 from env vars
     logger.info("✅ PaymentValidator con anti-fraude activado")
     
     # 4. Inicializar CoreHandler (cerebro del bot)
@@ -93,10 +88,10 @@ async def lifespan(app: FastAPI):
         conversation_manager=conversation_manager,
         security_manager=security_manager,
         payment_validator=payment_validator,
-        audio_transcriber=audio_transcriber,
         content_delivery=content_delivery,
         redis_store=redis_store,
-        gemini_api_key=GEMINI_API_KEY
+        gemini_api_key=GEMINI_API_KEY,
+        audio_transcriber=None  # Disabled for Railway
     )
     logger.info("✅ LolaCoreHandler inicializado")
     
@@ -139,6 +134,12 @@ app.add_middleware(
 async def root():
     """Health check simple"""
     return {"status": "ok", "message": "Bot Lola API v2.0"}
+
+
+@app.get("/health")
+async def health():
+    """Health check endpoint for Railway"""
+    return {"status": "ok"}
 
 
 @app.get("/api/health")
