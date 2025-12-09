@@ -34,11 +34,12 @@ class RedisStateStore:
         self.db_pool = db_pool  # NUEVO: Para respaldo en PostgreSQL
         self.client: Optional[redis.Redis] = None
         logger.info(f"RedisStateStore configurado para: {redis_url}")
+        self.redis_available = False  # Se establece en connect()
         if db_pool:
             logger.info("✅ Respaldo PostgreSQL habilitado")
 
     async def connect(self):
-        """Establece conexión con Redis"""
+        """Establece conexión con Redis (opcional - fallback a PostgreSQL si falla)"""
         try:
             self.client = await redis.from_url(
                 self.redis_url,
@@ -46,10 +47,12 @@ class RedisStateStore:
                 decode_responses=True
             )
             await self.client.ping()
+            self.redis_available = True
             logger.info("✅ Conexión a Redis establecida")
         except Exception as e:
-            logger.error(f"❌ Error conectando a Redis: {e}")
-            raise
+            logger.warning(f"⚠️ Redis no disponible ({e}). Usando solo PostgreSQL.")
+            self.redis_available = False
+            self.client = None
 
     async def disconnect(self):
         """Cierra la conexión con Redis"""
@@ -60,7 +63,7 @@ class RedisStateStore:
     async def get_state(self, user_id: str) -> Optional[Dict[str, Any]]:
         """
         Obtiene el estado de conversación de un usuario.
-        NUEVO: Intenta recuperar desde PostgreSQL si Redis falla.
+        NUEVO: Intenta recuperar desde PostgreSQL si Redis no está disponible o falla.
         
         Args:
             user_id: ID único del usuario (UUID string)
@@ -69,19 +72,21 @@ class RedisStateStore:
             Dict con el estado o None si no existe
         """
         try:
-            key = f"conversation_state:{user_id}"
-            data = await self.client.get(key)
+            # Si Redis está disponible, intentar primero
+            if self.redis_available and self.client:
+                key = f"conversation_state:{user_id}"
+                data = await self.client.get(key)
+                
+                if data:
+                    return json.loads(data)
             
-            if data:
-                return json.loads(data)
-            
-            # NUEVO: Si no está en Redis, intentar desde PostgreSQL
-            logger.info(f"🔍 No encontrado en Redis, buscando en PostgreSQL: {user_id}")
+            # Fallback a PostgreSQL
+            logger.info(f"🔍 No encontrado en Redis (o Redis no disponible), buscando en PostgreSQL: {user_id}")
             return await self.restore_from_postgres(user_id)
             
         except Exception as e:
             logger.error(f"Error obteniendo estado de {user_id}: {e}")
-            return None
+            return await self.restore_from_postgres(user_id)  # Fallback en error
 
     async def set_state(self, user_id: str, state_data: Dict[str, Any]):
         """
@@ -93,29 +98,33 @@ class RedisStateStore:
             state_data: Diccionario con el estado (debe ser JSON-serializable)
         """
         try:
-            # 1. Guardar en Redis (principal)
-            key = f"conversation_state:{user_id}"
-            await self.client.setex(
-                key,
-                self.ttl_seconds,
-                json.dumps(state_data)
-            )
-            logger.debug(f"✅ Estado guardado en Redis: {user_id}")
+            # 1. Guardar en Redis (si está disponible)
+            if self.redis_available and self.client:
+                key = f"conversation_state:{user_id}"
+                await self.client.setex(
+                    key,
+                    self.ttl_seconds,
+                    json.dumps(state_data)
+                )
+                logger.debug(f"✅ Estado guardado en Redis: {user_id}")
             
-            # 2. NUEVO: Respaldo asíncrono en PostgreSQL
+            # 2. Respaldo en PostgreSQL (siempre)
             if self.db_pool:
                 await self._backup_to_postgres(user_id, state_data)
                 
         except Exception as e:
             logger.error(f"Error guardando estado de {user_id}: {e}")
-            raise
+            # Intentar solo PostgreSQL si Redis falla
+            if self.db_pool:
+                await self._backup_to_postgres(user_id, state_data)
 
     async def delete_state(self, user_id: str):
         """Elimina el estado de un usuario (útil para reiniciar conversación)"""
         try:
-            key = f"conversation_state:{user_id}"
-            await self.client.delete(key)
-            logger.info(f"Estado de {user_id} eliminado")
+            if self.redis_available and self.client:
+                key = f"conversation_state:{user_id}"
+                await self.client.delete(key)
+                logger.info(f"Estado de {user_id} eliminado de Redis")
         except Exception as e:
             logger.error(f"Error eliminando estado de {user_id}: {e}")
 
@@ -155,7 +164,10 @@ class RedisStateStore:
         await self.set_state(user_id, state)
 
     async def health_check(self) -> bool:
-        """Verifica que Redis esté operativo"""
+        """Verifica que Redis esté operativo (o retorna False si no hay Redis)"""
+        if not self.redis_available or not self.client:
+            logger.info("Health check: Redis no disponible, usando solo PostgreSQL")
+            return False
         try:
             await self.client.ping()
             return True
