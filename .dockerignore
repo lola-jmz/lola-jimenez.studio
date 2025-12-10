@@ -78,11 +78,12 @@ backup_*.sql
 *.jpeg
 *.png
 *.gif
+*.webp
 *.mp4
 *.mp3
 *.wav
 *.ogg
-# ¡PERMITIR .webp del frontend!
+# ¡PERMITIR .webp del frontend! (debe ir DESPUÉS del bloqueo general)
 !frontend/public/images/*.webp
 
 # Build artifacts
