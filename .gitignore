@@ -78,9 +78,9 @@ temp/
 *.mp3
 *.wav
 *.m4a
-*.jpg
-*.jpeg
-*.png
+# *.jpg   # COMENTADO - frontend/public/images/*.webp debe estar en Git
+# *.jpeg  # COMENTADO - frontend/public/images/*.webp debe estar en Git 
+# *.png   # COMENTADO - frontend/public/images/*.webp debe estar en Git
 # *.webp  # COMENTADO - frontend/public/images/*.webp debe estar en Git
 *.gif
 
