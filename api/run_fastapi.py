@@ -138,6 +138,11 @@ if frontend_path.exists():
     if next_path.exists():
         app.mount("/_next", StaticFiles(directory=str(next_path)), name="next_static")
     
+    # Montar images desde out/images
+    images_path = frontend_path / "out" / "images"
+    if images_path.exists():
+        app.mount("/images", StaticFiles(directory=str(images_path)), name="images")
+    
     # Montar public para assets públicos
     public_path = frontend_path / "public"
     if public_path.exists():
