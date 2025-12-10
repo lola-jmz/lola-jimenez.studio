@@ -73,18 +73,17 @@ temp/
 backup_*.sql
 
 # Media files (subir a B2, no incluir en imagen)
-# EXCEPCIÓN: frontend/public/images/* (necesarios para landing page)
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.webp
-*.mp4
-*.mp3
-*.wav
-*.ogg
-# ¡PERMITIR .webp del frontend! (debe ir DESPUÉS del bloqueo general)
-!frontend/public/images/*.webp
+# TEMPORALMENTE COMENTADO - Las excepciones no funcionan correctamente
+# Las imágenes del frontend son críticas y pequeñas (~2MB), las incluimos en la imagen
+# *.jpg
+# *.jpeg
+# *.png
+# *.gif
+# *.webp
+# *.mp4
+# *.mp3
+# *.wav
+# *.ogg
 
 # Build artifacts
 build/
