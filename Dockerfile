@@ -59,8 +59,8 @@ RUN pip install --no-cache /wheels/*
 # Copiar código del backend
 COPY --chown=appuser:appuser . .
 
-# Copiar frontend compilado desde stage 1
-COPY --from=frontend-builder --chown=appuser:appuser /frontend/.next ./frontend/.next
+# Copiar frontend compilado desde stage 1 (static export)
+COPY --from=frontend-builder --chown=appuser:appuser /frontend/out ./frontend/out
 COPY --from=frontend-builder --chown=appuser:appuser /frontend/public ./frontend/public
 COPY --from=frontend-builder --chown=appuser:appuser /frontend/package*.json ./frontend/
 

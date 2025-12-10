@@ -130,13 +130,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configurar archivos estáticos del frontend Next.js
+# Configurar archivos estáticos del frontend Next.js (exportación estática)
 frontend_path = Path(__file__).parent.parent / "frontend"
 if frontend_path.exists():
-    # Montar _next para recursos de Next.js
-    next_path = frontend_path / ".next" / "static"
+    # Montar _next para recursos de exportación estática
+    next_path = frontend_path / "out" / "_next"
     if next_path.exists():
-        app.mount("/_next/static", StaticFiles(directory=str(next_path)), name="next_static")
+        app.mount("/_next", StaticFiles(directory=str(next_path)), name="next_static")
     
     # Montar public para assets públicos
     public_path = frontend_path / "public"
@@ -148,20 +148,15 @@ if frontend_path.exists():
 
 @app.get("/")
 async def root():
-    """Servir frontend Next.js"""
-    frontend_index = Path(__file__).parent.parent / "frontend" / ".next" / "server" / "app" / "index.html"
+    """Servir frontend Next.js (exportación estática)"""
+    static_index = Path(__file__).parent.parent / "frontend" / "out" / "index.html"
     
-    # Si no existe el build de Next.js, mostrar mensaje
-    if not frontend_index.exists():
-        # Buscar alternativa en export estático
-        static_index = Path(__file__).parent.parent / "frontend" / "out" / "index.html"
-        if static_index.exists():
-            return FileResponse(static_index)
-        
-        # Fallback a respuesta JSON si no hay frontend
-        return {"status": "ok", "message": "Bot Lola API v2.0", "note": "Frontend not built"}
+    # Si existe el HTML estático, servirlo
+    if static_index.exists():
+        return FileResponse(static_index)
     
-    return FileResponse(frontend_index)
+    # Fallback a respuesta JSON si no hay frontend
+    return {"status": "ok", "message": "Bot Lola API v2.0", "note": "Frontend not built"}
 
 
 @app.get("/health")
