@@ -9,8 +9,11 @@ Backend web para Bot Lola.
 import os
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from pathlib import Path
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 
 # Imports locales
@@ -121,19 +124,44 @@ app = FastAPI(
 # Configurar CORS (permitir frontend React)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://lola-jimenez.studio"],
+    allow_origins=["http://localhost:5173", "https://lola-jimenez.studio", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Configurar archivos estáticos del frontend Next.js
+frontend_path = Path(__file__).parent.parent / "frontend"
+if frontend_path.exists():
+    # Montar _next para recursos de Next.js
+    next_path = frontend_path / ".next" / "static"
+    if next_path.exists():
+        app.mount("/_next/static", StaticFiles(directory=str(next_path)), name="next_static")
+    
+    # Montar public para assets públicos
+    public_path = frontend_path / "public"
+    if public_path.exists():
+        app.mount("/public", StaticFiles(directory=str(public_path)), name="public")
 
 
 # ==================== ENDPOINTS REST ====================
 
 @app.get("/")
 async def root():
-    """Health check simple"""
-    return {"status": "ok", "message": "Bot Lola API v2.0"}
+    """Servir frontend Next.js"""
+    frontend_index = Path(__file__).parent.parent / "frontend" / ".next" / "server" / "app" / "index.html"
+    
+    # Si no existe el build de Next.js, mostrar mensaje
+    if not frontend_index.exists():
+        # Buscar alternativa en export estático
+        static_index = Path(__file__).parent.parent / "frontend" / "out" / "index.html"
+        if static_index.exists():
+            return FileResponse(static_index)
+        
+        # Fallback a respuesta JSON si no hay frontend
+        return {"status": "ok", "message": "Bot Lola API v2.0", "note": "Frontend not built"}
+    
+    return FileResponse(frontend_index)
 
 
 @app.get("/health")

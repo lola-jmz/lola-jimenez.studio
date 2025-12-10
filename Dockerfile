@@ -1,10 +1,30 @@
 # =============================================================================
-# Dockerfile - Lola Jiménez Studio
+# Dockerfile - Lola Jiménez Studio (Backend + Frontend)
 # =============================================================================
-# Multi-stage build para imagen optimizada
+# Multi-stage build para imagen optimizada con Next.js frontend
 # =============================================================================
 
-FROM python:3.11-slim as builder
+# Stage 1: Build Next.js Frontend
+FROM node:20-slim AS frontend-builder
+
+WORKDIR /frontend
+
+# Copiar package files del frontend
+COPY frontend/package*.json ./
+
+# Instalar dependencias
+RUN npm ci --production=false
+
+# Copiar código del frontend
+COPY frontend/ ./
+
+# Build Next.js para producción
+RUN npm run build
+
+# =============================================================================
+# Stage 2: Build Python Dependencies
+# =============================================================================
+FROM python:3.11-slim AS python-builder
 
 WORKDIR /app
 
@@ -18,7 +38,7 @@ COPY requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
 
 # =============================================================================
-# Imagen final
+# Stage 3: Final Production Image
 # =============================================================================
 FROM python:3.11-slim
 
@@ -33,11 +53,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar wheels pre-compilados e instalar
-COPY --from=builder /wheels /wheels
+COPY --from=python-builder /wheels /wheels
 RUN pip install --no-cache /wheels/*
 
-# Copiar código de la aplicación
+# Copiar código del backend
 COPY --chown=appuser:appuser . .
+
+# Copiar frontend compilado desde stage 1
+COPY --from=frontend-builder --chown=appuser:appuser /frontend/.next ./frontend/.next
+COPY --from=frontend-builder --chown=appuser:appuser /frontend/public ./frontend/public
+COPY --from=frontend-builder --chown=appuser:appuser /frontend/package*.json ./frontend/
 
 # Cambiar a usuario no-root
 USER appuser
@@ -45,7 +70,8 @@ USER appuser
 # Variables de entorno por defecto
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV PORT=8000
+ENV PORT=8080
+ENV NODE_ENV=production
 
 # Exponer puerto (Railway usa $PORT)
 EXPOSE $PORT
