@@ -15,7 +15,7 @@
 
 # next.js
 /.next/
-/out/
+# /out/  # Temporarily allowing to commit pre-compiled frontend
 
 # production
 /build
