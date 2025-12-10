@@ -132,21 +132,30 @@ app.add_middleware(
 
 # Configurar archivos estáticos del frontend Next.js (exportación estática)
 frontend_path = Path(__file__).parent.parent / "frontend"
+logger.info(f"🔍 DEBUG - Frontend path: {frontend_path}, exists: {frontend_path.exists()}")
 if frontend_path.exists():
     # Montar _next para recursos de exportación estática
     next_path = frontend_path / "out" / "_next"
     if next_path.exists():
         app.mount("/_next", StaticFiles(directory=str(next_path)), name="next_static")
+        logger.info(f"✅ Mounted /_next from {next_path}")
     
     # Montar images desde public/images (Next.js no copia /public a /out en static export)
     images_path = frontend_path / "public" / "images"
+    logger.info(f"🔍 DEBUG - Images path: {images_path}, exists: {images_path.exists()}")
     if images_path.exists():
+        image_files = list(images_path.glob("*.webp"))
+        logger.info(f"🔍 DEBUG - Found {len(image_files)} .webp files: {[f.name for f in image_files]}")
         app.mount("/images", StaticFiles(directory=str(images_path)), name="images")
+        logger.info(f"✅ Mounted /images from {images_path}")
+    else:
+        logger.error(f"❌ Images directory NOT FOUND: {images_path}")
     
     # Montar public para assets públicos
     public_path = frontend_path / "public"
     if public_path.exists():
         app.mount("/public", StaticFiles(directory=str(public_path)), name="public")
+        logger.info(f"✅ Mounted /public from {public_path}")
 
 
 # ==================== ENDPOINTS REST ====================
