@@ -96,4 +96,4 @@ dist/
 # Frontend (si se despliega por separado)
 frontend/node_modules/
 frontend/.next/
-frontend/out/
+# frontend/out/  # TEMPORARILY ALLOWING - pre-compiled frontend needed
