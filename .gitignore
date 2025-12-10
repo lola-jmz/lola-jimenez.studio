@@ -81,7 +81,7 @@ temp/
 *.jpg
 *.jpeg
 *.png
-*.webp
+# *.webp  # COMENTADO - frontend/public/images/*.webp debe estar en Git
 *.gif
 
 # Excepciones: mantener carpetas pero no contenido
@@ -105,8 +105,8 @@ oci_key.pem
 .backups/
 
 # Gemini/Guus personal files
-.guus/
 .gemini/
+.guus/ 
 
 # Jupyter Notebooks
 *.ipynb_checkpoints/
