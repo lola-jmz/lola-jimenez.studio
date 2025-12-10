@@ -73,15 +73,17 @@ temp/
 backup_*.sql
 
 # Media files (subir a B2, no incluir en imagen)
+# EXCEPCIÓN: frontend/public/images/* (necesarios para landing page)
 *.jpg
 *.jpeg
 *.png
 *.gif
-*.webp
 *.mp4
 *.mp3
 *.wav
 *.ogg
+# ¡PERMITIR .webp del frontend!
+!frontend/public/images/*.webp
 
 # Build artifacts
 build/

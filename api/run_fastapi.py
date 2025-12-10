@@ -138,8 +138,8 @@ if frontend_path.exists():
     if next_path.exists():
         app.mount("/_next", StaticFiles(directory=str(next_path)), name="next_static")
     
-    # Montar images desde out/images
-    images_path = frontend_path / "out" / "images"
+    # Montar images desde public/images (Next.js no copia /public a /out en static export)
+    images_path = frontend_path / "public" / "images"
     if images_path.exists():
         app.mount("/images", StaticFiles(directory=str(images_path)), name="images")
     
