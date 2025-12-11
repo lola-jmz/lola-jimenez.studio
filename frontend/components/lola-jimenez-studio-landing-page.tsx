@@ -32,7 +32,7 @@ const ImageWithBlur = ({ src, alt, className }: { src: string, alt: string, clas
       <img
         src={src}
         alt={alt}
-        className="w-full h-full object-cover transition-all duration-300"
+        className="w-full h-full object-cover transition-all duration-300 hover:blur-sm"
         loading="lazy"
         onContextMenu={(e) => e.preventDefault()}
         draggable={false}
@@ -40,6 +40,8 @@ const ImageWithBlur = ({ src, alt, className }: { src: string, alt: string, clas
           filter: isZoomed ? 'blur(8px) grayscale(50%)' : 'none',
           WebkitUserSelect: 'none',
           userSelect: 'none',
+          touchAction: 'none',
+          imageRendering: 'auto',
           transition: 'filter 0.3s ease'
         }}
       />
@@ -208,10 +210,10 @@ export function LolaJiménezStudioLandingPage() {
         <div className="max-w-6xl mx-auto px-6 relative z-10">
           <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="flex-shrink-0">
-              <img
+              <ImageWithBlur
                 alt="Lola Jiménez"
                 src="/images/hero.webp"
-                className="w-64 h-64 rounded-full border-4 border-white shadow-2xl object-cover"
+                className="w-64 h-64 rounded-full border-4 border-white shadow-2xl"
               />
             </div>
             <div className="flex-1 text-center md:text-left">
@@ -240,10 +242,10 @@ export function LolaJiménezStudioLandingPage() {
           </h2>
           <div className="grid md:grid-cols-2 gap-12 mb-16">
             <div>
-              <img
+              <ImageWithBlur
                 alt="About Lola"
                 src="/images/about.webp"
-                className="w-full aspect-[3/4] object-cover rounded-lg shadow-lg border-4 border-primary"
+                className="w-full aspect-[3/4] rounded-lg shadow-lg border-4 border-primary"
               />
             </div>
             <div className="flex flex-col justify-center">
@@ -318,24 +320,24 @@ export function LolaJiménezStudioLandingPage() {
               />
             </Card>
             <Card className="overflow-hidden border-4 border-secondary rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-secondary/30 transition-all duration-300 cursor-pointer">
-              <img
+              <ImageWithBlur
                 alt="Portfolio 4"
                 src="/images/portafolio-4.webp"
-                className="w-full aspect-[3/4] object-cover"
+                className="w-full aspect-[3/4]"
               />
             </Card>
             <Card className="overflow-hidden border-4 border-primary rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 cursor-pointer">
-              <img
+              <ImageWithBlur
                 alt="Portfolio 5"
                 src="/images/portafolio-5.webp"
-                className="w-full aspect-[3/4] object-cover"
+                className="w-full aspect-[3/4]"
               />
             </Card>
             <Card className="overflow-hidden border-4 border-secondary rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-secondary/30 transition-all duration-300 cursor-pointer">
-              <img
+              <ImageWithBlur
                 alt="Portfolio 6"
                 src="/images/portafolio-6.webp"
-                className="w-full aspect-[3/4] object-cover"
+                className="w-full aspect-[3/4]"
               />
             </Card>
           </div>
