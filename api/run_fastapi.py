@@ -22,6 +22,7 @@ from core.state_machine import ConversationManager
 from core.core_handler import LolaCoreHandler
 from services.security import SecurityManager
 from services.payment_validator import PaymentValidator
+from services.payment_validator_local import HybridPaymentValidator
 # Audio transcription temporarily disabled for Railway deployment
 # from services.audio_transcriber import AudioTranscriber
 from services.content_delivery import ContentDeliveryService
@@ -76,9 +77,10 @@ async def lifespan(app: FastAPI):
     # 3. Inicializar servicios
     conversation_manager = ConversationManager()
     security_manager = SecurityManager()
-    payment_validator = PaymentValidator(
+    payment_validator = HybridPaymentValidator(
         gemini_api_key=GEMINI_API_KEY,
-        db_pool=db_pool.pool  # NUEVO: Activar anti-fraude P-Hash
+        db_pool=db_pool.pool,  # NUEVO: Activar anti-fraude P-Hash
+        use_gpu=False  # Railway CPU only
     )
     # Audio transcription disabled for Railway deployment
     # audio_transcriber = AudioTranscriber()
@@ -227,28 +229,120 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
     """
     Endpoint WebSocket para chat en tiempo real.
     
+    Protocolo JSON:
+    - Recibe: {"type": "text|image", "content": "..."}
+    - Envía: {"type": "text|image", "content": "...", "url": "...", "caption": "..."}
+    
     Args:
         user_id: UUID único del usuario (generado por frontend)
     """
     await connection_manager.connect(websocket, user_id)
     
     try:
-        # Enviar mensaje de bienvenida
-        welcome_msg = "holaa 🙈"
-        await connection_manager.send_personal_message(welcome_msg, user_id)
+        # NO enviar mensaje automático - Lola espera que el usuario inicie
+        # (Fix ERROR-C1: mensaje proactivo rompía naturalidad)
         
         # Loop principal: recibir y procesar mensajes
         while True:
-            # Esperar mensaje del usuario
-            data = await websocket.receive_text()
+            # Recibir mensaje como JSON
+            try:
+                data = await websocket.receive_json()
+                msg_type = data.get("type", "text")
+                content = data.get("content", "")
+            except Exception:
+                # Fallback: si no es JSON válido, intentar como texto plano
+                raw_data = await websocket.receive_text()
+                msg_type = "text"
+                content = raw_data
             
-            logger.info(f"Mensaje recibido de {user_id}: {data[:50]}...")
+            logger.info(f"Mensaje [{msg_type}] recibido de {user_id}: {str(content)[:50]}...")
             
-            # Procesar con CoreHandler
-            response = await core_handler.process_text_message(user_id, data)
+            if msg_type == "text":
+                # Procesar mensaje de texto normal
+                response = await core_handler.process_text_message(user_id, content)
+                
+                # Detectar si la respuesta incluye una URL de contenido (entrega de producto)
+                if "lola-content" in response or "b2.backblazeb2.com" in response:
+                    # Extraer URL de la respuesta
+                    import re
+                    url_match = re.search(r'https://[^\s]+', response)
+                    if url_match:
+                        image_url = url_match.group(0)
+                        # Enviar texto primero
+                        caption = response.replace(image_url, "").strip()
+                        await connection_manager.send_personal_message(
+                            message="mira lo que tengo para ti 😏",
+                            user_id=user_id,
+                            msg_type="text"
+                        )
+                        # Luego enviar imagen inline
+                        await connection_manager.send_personal_message(
+                            message=caption,
+                            user_id=user_id,
+                            msg_type="image",
+                            image_url=image_url,
+                            caption="espero te guste 🫣"
+                        )
+                    else:
+                        # No hay URL, enviar como texto normal
+                        await connection_manager.send_personal_message(response, user_id)
+                else:
+                    # Respuesta de texto normal
+                    await connection_manager.send_personal_message(response, user_id)
             
-            # Enviar respuesta de Lola
-            await connection_manager.send_personal_message(response, user_id)
+            elif msg_type == "image":
+                # Usuario envió imagen (probablemente comprobante de pago)
+                image_data = content  # Base64 o URL de la imagen
+                
+                # Guardar imagen temporalmente para validación
+                import base64
+                import tempfile
+                import os
+                
+                try:
+                    # Decodificar base64 y guardar como archivo temporal
+                    if image_data.startswith("data:image"):
+                        # Formato data URL: data:image/jpeg;base64,/9j/4AAQ...
+                        image_data = image_data.split(",")[1]
+                    
+                    image_bytes = base64.b64decode(image_data)
+                    
+                    # Crear archivo temporal
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
+                        tmp_file.write(image_bytes)
+                        temp_path = tmp_file.name
+                    
+                    logger.info(f"Imagen guardada temporalmente: {temp_path}")
+                    
+                    # Procesar imagen como comprobante de pago
+                    response = await core_handler.process_photo_message(user_id, temp_path)
+                    
+                    # Limpiar archivo temporal
+                    os.unlink(temp_path)
+                    
+                    # Aplicar delay realista (igual que texto)
+                    import asyncio
+                    from core.core_handler import calculate_typing_delay
+                    delay = calculate_typing_delay(response)
+                    logger.info(f"Aplicando delay realista para imagen: {delay}s")
+                    await asyncio.sleep(delay)
+                    
+                    # Enviar respuesta
+                    await connection_manager.send_personal_message(response, user_id)
+                    
+                except Exception as e:
+                    logger.error(f"Error procesando imagen de {user_id}: {e}")
+                    await connection_manager.send_personal_message(
+                        "Ay, no pude ver bien tu imagen. Intenta de nuevo porfa 📸",
+                        user_id
+                    )
+            else:
+                # Tipo no reconocido
+                logger.warning(f"Tipo de mensaje no reconocido: {msg_type}")
+                await connection_manager.send_personal_message(
+                    "No entendí eso haha, mejor escríbeme 💬",
+                    user_id
+                )
     
     except WebSocketDisconnect:
         connection_manager.disconnect(user_id)
