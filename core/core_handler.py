@@ -43,6 +43,32 @@ from storage.redis_store import RedisStateStore
 logger = logging.getLogger(__name__)
 
 
+def calculate_typing_delay(text: str) -> float:
+    """
+    Calcula delay realista basado en longitud de texto.
+    Velocidad humana: ~40-50 palabras/minuto en móvil = ~1.2s por palabra.
+    
+    Returns:
+        Delay en segundos (mínimo 1.5s, máximo 15s)
+    """
+    import random
+    word_count = len(text.split())
+    
+    # Tiempo de escritura: 1.2s por palabra
+    typing_time = word_count * 1.2
+    
+    # Tiempo de pensamiento inicial: 1-3s
+    thinking_time = random.uniform(1.0, 3.0)
+    
+    # Variación natural ±20%
+    variation = random.uniform(0.8, 1.2)
+    
+    total_delay = (thinking_time + typing_time) * variation
+    
+    # Límites razonables
+    return max(1.5, min(total_delay, 15.0))
+
+
 class LolaCoreHandler:
     """
     El cerebro de Lola. Esta clase no sabe nada sobre Telegram o WebSockets.
@@ -242,6 +268,26 @@ class LolaCoreHandler:
             self.conversation_manager.handle_event(user_identifier, EventType.MENSAJE_RECIBIDO)
             quick_intent = self.quick_intent_detection(sanitized_text)
             response_text = await self._generate_lola_response(user_identifier, sanitized_text, quick_intent)
+            
+            # 🔥 FIX v2: Detección ROBUSTA de datos de pago
+            # Buscar patrones parciales (últimos 8 dígitos) + keywords de pago
+            response_normalized = response_text.replace(" ", "").replace("-", "").lower()
+            CLABE_PARTIAL = "44136159"  # Últimos 8 dígitos de CLABE
+            OXXO_PARTIAL = "95348913"   # Últimos 8 dígitos de tarjeta Oxxo
+            payment_keywords = ["clabe", "oxxo", "transferencia", "deposita"]
+            
+            has_payment_data = (
+                CLABE_PARTIAL in response_normalized or
+                OXXO_PARTIAL in response_normalized or
+                any(kw in response_normalized for kw in payment_keywords)
+            )
+            
+            if has_payment_data:
+                self.conversation_manager.handle_event(user_identifier, EventType.SOLICITAR_PAGO)
+                new_state = self.conversation_manager.get_state(user_identifier)
+                logger.info(f"🎯 PAGO DETECTADO en respuesta de Lola para {user_identifier}")
+                logger.info(f"🎯 Estado cambiado: CONVERSANDO → {new_state.value}")
+                logger.info(f"📝 Trigger encontrado en: {response_text[:100]}...")
         
         elif current_state == ConversationState.ESPERANDO_PAGO:
             # El usuario está hablando en lugar de enviar el comprobante.
@@ -257,6 +303,12 @@ class LolaCoreHandler:
 
         # 5. Guardar respuesta de Lola
         await self.conversation_repo.save_message(user_id, response_text, is_bot=True)
+        
+        # 6. Aplicar delay realista antes de retornar (Fix ERROR-C8)
+        # Simula el tiempo que tardaría una persona real en escribir
+        delay = calculate_typing_delay(response_text)
+        logger.info(f"Aplicando delay realista: {delay:.1f}s para {len(response_text.split())} palabras")
+        await asyncio.sleep(delay)
         
         return response_text
 
@@ -304,9 +356,14 @@ class LolaCoreHandler:
         user_id = await self.conversation_repo.get_or_create_user_by_identifier(user_identifier)
 
         current_state = self.conversation_manager.get_state(user_identifier)
+        
+        # 📊 LOGGING DETALLADO para diagnóstico
+        logger.info(f"📸 IMAGEN RECIBIDA de {user_identifier}")
+        logger.info(f"📊 Estado actual: {current_state.value}")
 
         # 1. Verificar si estamos esperando un pago
         if current_state not in [ConversationState.ESPERANDO_PAGO, ConversationState.PAGO_RECHAZADO]:
+            logger.warning(f"⚠️ RECHAZADO: Estado '{current_state.value}' no acepta comprobantes. Se requiere 'esperando_pago'.")
             return "haha gracias por la foto. pero no estoy esperando un comprobante ahora."
 
         # 2. Validar que la imagen sea segura (lógica de security.py)
