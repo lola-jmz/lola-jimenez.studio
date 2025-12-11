@@ -500,7 +500,7 @@ Tu respuesta (como Lola):
             expected_amount = 200
         
         await gemini_rate_limiter.acquire()
-        return self.payment_validator.validate_payment_proof(
+        return await self.payment_validator.validate_payment_proof(  # FIX: await añadido
             image_path,
             expected_amount=expected_amount,
             expected_currency="MXN"
