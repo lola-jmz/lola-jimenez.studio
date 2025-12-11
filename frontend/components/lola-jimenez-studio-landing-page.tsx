@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
@@ -10,36 +10,46 @@ import { Separator } from "@/components/ui/separator";
 import { useWebSocket } from "@/lib/useWebSocket";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-// Componente de Imagen Protegida (Anti-Zoom)
-// Si el usuario intenta hacer zoom (scale > 1) o la ve en móvil, aplicamos blur/protección
+// Componente de Imagen Protegida REAL (Anti-Zoom que SÍ funciona)
 const ImageWithBlur = ({ src, alt, className }: { src: string, alt: string, className?: string }) => {
+  const [isZoomed, setIsZoomed] = useState(false)
+
+  useEffect(() => {
+    // Detectar zoom del navegador
+    const detectZoom = () => {
+      const zoomLevel = Math.round(window.devicePixelRatio * 100)
+      setIsZoomed(zoomLevel > 100) // Si zoom > 100%, activar blur
+    }
+
+    detectZoom()
+    window.addEventListener('resize', detectZoom)
+
+    return () => window.removeEventListener('resize', detectZoom)
+  }, [])
+
   return (
-    <div className={`relative overflow-hidden group ${className}`}>
+    <div className={`relative overflow-hidden ${className}`}>
       <img
         src={src}
         alt={alt}
         className="w-full h-full object-cover transition-all duration-300"
         loading="lazy"
-        onContextMenu={(e) => e.preventDefault()} // Deshabilitar click derecho
-        draggable={false} // Deshabilitar arrastrar
+        onContextMenu={(e) => e.preventDefault()}
+        draggable={false}
         style={{
-          // Truco CSS: si el device-pixel-ratio cambia (zoom) o user-select
+          filter: isZoomed ? 'blur(8px) grayscale(50%)' : 'none',
           WebkitUserSelect: 'none',
           userSelect: 'none',
+          transition: 'filter 0.3s ease'
         }}
       />
-      {/* Overlay invisible detector de zoom/hover agresivo */}
-      <div className="absolute inset-0 bg-transparent" />
-
-      {/* Estilo global inyectado solo para estas imágenes */}
-      <style jsx global>{`
-        /* Si el usuario hace zoom en la página completa */
-        @media (min-resolution: 1.25dppx) {
-          .protected-content {
-             filter: blur(5px);
-          }
-        }
-      `}</style>
+      {/* Watermark invisible anti-piratería */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(233,30,99,0.03) 35px, rgba(233,30,99,0.03) 70px)',
+        }}
+      />
     </div>
   )
 }
