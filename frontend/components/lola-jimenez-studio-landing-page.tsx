@@ -10,6 +10,40 @@ import { Separator } from "@/components/ui/separator";
 import { useWebSocket } from "@/lib/useWebSocket";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+// Componente de Imagen Protegida (Anti-Zoom)
+// Si el usuario intenta hacer zoom (scale > 1) o la ve en móvil, aplicamos blur/protección
+const ImageWithBlur = ({ src, alt, className }: { src: string, alt: string, className?: string }) => {
+  return (
+    <div className={`relative overflow-hidden group ${className}`}>
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-full object-cover transition-all duration-300"
+        loading="lazy"
+        onContextMenu={(e) => e.preventDefault()} // Deshabilitar click derecho
+        draggable={false} // Deshabilitar arrastrar
+        style={{
+          // Truco CSS: si el device-pixel-ratio cambia (zoom) o user-select
+          WebkitUserSelect: 'none',
+          userSelect: 'none',
+        }}
+      />
+      {/* Overlay invisible detector de zoom/hover agresivo */}
+      <div className="absolute inset-0 bg-transparent" />
+
+      {/* Estilo global inyectado solo para estas imágenes */}
+      <style jsx global>{`
+        /* Si el usuario hace zoom en la página completa */
+        @media (min-resolution: 1.25dppx) {
+          .protected-content {
+             filter: blur(5px);
+          }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 export function LolaJiménezStudioLandingPage() {
   const [chatOpen, setChatOpen] = useState(false)
   const [inputValue, setInputValue] = useState('')
@@ -253,24 +287,24 @@ export function LolaJiménezStudioLandingPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card className="overflow-hidden border-4 border-primary rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 cursor-pointer">
-              <img
+              <ImageWithBlur
                 alt="Portfolio 1"
                 src="/images/portafolio-1.webp"
-                className="w-full aspect-[3/4] object-cover"
+                className="w-full aspect-[3/4]"
               />
             </Card>
             <Card className="overflow-hidden border-4 border-secondary rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-secondary/30 transition-all duration-300 cursor-pointer">
-              <img
+              <ImageWithBlur
                 alt="Portfolio 2"
                 src="/images/portafolio-2.webp"
-                className="w-full aspect-[3/4] object-cover"
+                className="w-full aspect-[3/4]"
               />
             </Card>
             <Card className="overflow-hidden border-4 border-primary rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 cursor-pointer">
-              <img
+              <ImageWithBlur
                 alt="Portfolio 3"
                 src="/images/portafolio-3.webp"
-                className="w-full aspect-[3/4] object-cover"
+                className="w-full aspect-[3/4]"
               />
             </Card>
             <Card className="overflow-hidden border-4 border-secondary rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-secondary/30 transition-all duration-300 cursor-pointer">
@@ -484,7 +518,21 @@ export function LolaJiménezStudioLandingPage() {
                     : 'bg-primary text-primary-foreground'
                     }`}
                 >
-                  {msg.content}
+                  {/* Renderizar imagen inline si es tipo image */}
+                  {msg.type === 'image' && msg.imageUrl ? (
+                    <div className="space-y-2">
+                      <ImageWithBlur
+                        src={msg.imageUrl}
+                        alt={msg.caption || "Imagen de Lola"}
+                        className="max-w-full rounded-lg shadow-md"
+                      />
+                      {msg.caption && (
+                        <p className="text-sm italic">{msg.caption}</p>
+                      )}
+                    </div>
+                  ) : (
+                    msg.content
+                  )}
                 </div>
               </div>
             ))}
