@@ -43,14 +43,14 @@ class PaymentValidator:
     def __init__(
         self,
         gemini_api_key: str,
-        model_name: str = "gemini-2.5-pro",
+        model_name: str = "gemini-1.5-flash",
         expected_amount: Optional[float] = None,
         db_pool = None  # NUEVO: Pool de conexiones PostgreSQL para anti-fraude
     ):
         """
         Args:
             gemini_api_key: API key de Google Gemini
-            model_name: Modelo a usar (gemini-2.5-pro para Vision)
+            model_name: Modelo a usar (gemini-1.5-flash optimizado para Vision/OCR)
             expected_amount: Monto esperado del pago (opcional)
             db_pool: Pool de conexiones asyncpg para verificación de hashes
         """

@@ -87,6 +87,21 @@ async def lifespan(app: FastAPI):
     content_delivery = ContentDeliveryService()  # Uses Backblaze B2 from env vars
     logger.info("✅ PaymentValidator con anti-fraude activado")
     
+    # 3.5. Inicializar Telegram Notifier (opcional)
+    telegram_notifier = None
+    TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+    
+    if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
+        from services.telegram_notifier import TelegramNotifier
+        telegram_notifier = TelegramNotifier(
+            bot_token=TELEGRAM_BOT_TOKEN,
+            chat_id=TELEGRAM_CHAT_ID
+        )
+        logger.info("✅ Telegram Notifier habilitado")
+    else:
+        logger.warning("⚠️ Telegram Notifier no configurado (variables faltantes)")
+    
     # 4. Inicializar CoreHandler (cerebro del bot)
     core_handler = LolaCoreHandler(
         db_pool=db_pool,
@@ -96,7 +111,8 @@ async def lifespan(app: FastAPI):
         content_delivery=content_delivery,
         redis_store=redis_store,
         gemini_api_key=GEMINI_API_KEY,
-        audio_transcriber=None  # Disabled for Railway
+        audio_transcriber=None,  # Disabled for Railway
+        telegram_notifier=telegram_notifier  # Optional
     )
     logger.info("✅ LolaCoreHandler inicializado")
     

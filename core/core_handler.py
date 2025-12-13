@@ -33,6 +33,7 @@ from database.database_pool import DatabasePool, ConversationRepository
 from core.state_machine import ConversationManager, EventType, ConversationState
 from services.security import SecurityManager
 from services.payment_validator import PaymentValidator
+from services.telegram_notifier import TelegramNotifier
 # Audio transcription temporarily disabled for Railway deployment
 # from services.audio_transcriber import AudioTranscriber
 AudioTranscriber = None  # Placeholder when disabled
@@ -84,7 +85,8 @@ class LolaCoreHandler:
         content_delivery: ContentDeliveryService,
         redis_store: RedisStateStore,
         gemini_api_key: str,
-        audio_transcriber: Optional[Any] = None  # Optional: disabled for Railway
+        audio_transcriber: Optional[Any] = None,  # Optional: disabled for Railway
+        telegram_notifier: Optional[TelegramNotifier] = None  # Optional: para notificaciones de pago
     ):
         """
         Inicializa el handler con todos los servicios necesarios (Inyección de Dependencias).
@@ -97,6 +99,7 @@ class LolaCoreHandler:
         self.content_delivery = content_delivery
         self.redis_store = redis_store
         self.gemini_api_key = gemini_api_key
+        self.telegram_notifier = telegram_notifier
 
         # Repositorio para operaciones de BD
         self.conversation_repo = ConversationRepository(self.db_pool)
@@ -378,6 +381,37 @@ class LolaCoreHandler:
 
         # 4. Validar el comprobante (lógica de payment_validator.py)
         validation_result = await self._validate_payment_proof(photo_path, user_identifier)
+        
+        # 4.5. Notificar a Guus via Telegram (si está configurado)
+        if self.telegram_notifier:
+            try:
+                confidence = validation_result.get("confidence", 0.0)
+                expected_amount = await self.redis_store.get_metadata(user_identifier, "expected_amount") or 200
+                extracted_data = validation_result.get("extracted_data", {})
+                
+                # Subir imagen a Backblaze para compartir URL
+                image_url = None
+                try:
+                    from pathlib import Path
+                    filename = f"comprobantes/comprobante_{user_identifier}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+                    # TODO: Implementar upload_file en content_delivery si no existe
+                    # image_url = await self.content_delivery.upload_file(photo_path, filename)
+                    logger.info(f"📸 Comprobante guardado localmente: {photo_path}")
+                except Exception as e:
+                    logger.warning(f"No se pudo subir comprobante a Backblaze: {e}")
+                
+                # Enviar notificación
+                await self.telegram_notifier.notify_payment_received(
+                    user_identifier=user_identifier,
+                    amount=expected_amount,
+                    image_url=image_url,
+                    confidence=confidence,
+                    extracted_data=extracted_data
+                )
+                logger.info(f"📱 Notificación Telegram enviada para {user_identifier}")
+            except Exception as e:
+                logger.error(f"Error enviando notificación Telegram: {e}")
+                # No bloquear el flujo si falla Telegram
 
         # 5. Reaccionar al resultado
         if validation_result["is_valid"]:

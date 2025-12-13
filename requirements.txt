@@ -1,14 +1,7 @@
---extra-index-url https://download.pytorch.org/whl/cpu
 # Core dependencies
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 websockets>=12.0
-
-# OCR & Vision (Local - CPU Optimized)
-torch
-torchvision
-easyocr
-opencv-python-headless
 
 
 # Environment and configuration
