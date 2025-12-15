@@ -43,7 +43,7 @@ class PaymentValidator:
     def __init__(
         self,
         gemini_api_key: str,
-        model_name: str = "gemini-1.5-flash",
+        model_name: str = "gemini-2.5-flash",
         expected_amount: Optional[float] = None,
         db_pool = None  # NUEVO: Pool de conexiones PostgreSQL para anti-fraude
     ):
