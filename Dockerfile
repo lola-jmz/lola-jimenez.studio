@@ -1,11 +1,15 @@
 # =============================================================================
 # Dockerfile - Lola Jiménez Studio (Backend + Frontend)
 # =============================================================================
-# Simplified build - frontend pre-compiled
+# FORCE REBUILD - Invalida cache Docker completamente
+ARG FORCE_REBUILD=20251217_1601
 # =============================================================================
 
 # Stage 1: Build Python Dependencies
 FROM python:3.11-slim AS python-builder
+
+# Echo para confirmar rebuild en logs
+RUN echo "🔄 FORCE REBUILD: ${FORCE_REBUILD}"
 
 WORKDIR /app
 
