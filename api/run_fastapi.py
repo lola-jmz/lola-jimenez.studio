@@ -22,7 +22,7 @@ from core.state_machine import ConversationManager
 from core.core_handler import LolaCoreHandler
 from services.security import SecurityManager
 from services.payment_validator import PaymentValidator
-from services.payment_validator_local import HybridPaymentValidator
+# HybridPaymentValidator disabled for Railway deployment (requires easyocr)
 # Audio transcription temporarily disabled for Railway deployment
 # from services.audio_transcriber import AudioTranscriber
 from services.content_delivery import ContentDeliveryService
@@ -77,15 +77,12 @@ async def lifespan(app: FastAPI):
     # 3. Inicializar servicios
     conversation_manager = ConversationManager()
     security_manager = SecurityManager()
-    payment_validator = HybridPaymentValidator(
+    payment_validator = PaymentValidator(
         gemini_api_key=GEMINI_API_KEY,
-        db_pool=db_pool.pool,  # NUEVO: Activar anti-fraude P-Hash
-        use_gpu=False  # Railway CPU only
+        db_pool=db_pool.pool  # For anti-fraude P-Hash
     )
-    # Audio transcription disabled for Railway deployment
-    # audio_transcriber = AudioTranscriber()
     content_delivery = ContentDeliveryService()  # Uses Backblaze B2 from env vars
-    logger.info("✅ PaymentValidator con anti-fraude activado")
+    logger.info("✅ PaymentValidator (Gemini Vision) inicializado")
     
     # 3.5. Inicializar Telegram Notifier (opcional)
     telegram_notifier = None
