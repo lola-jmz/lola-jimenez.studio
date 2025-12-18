@@ -18,7 +18,7 @@ watchPatterns = [
 ]
 
 [deploy]
-startCommand = "uvicorn api.run_fastapi:app --host 0.0.0.0 --port $PORT"
+startCommand = "sh -c 'uvicorn api.run_fastapi:app --host 0.0.0.0 --port ${PORT:-8080}'"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
