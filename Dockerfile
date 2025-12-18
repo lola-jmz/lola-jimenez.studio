@@ -36,7 +36,7 @@ COPY --from=python-builder /wheels /wheels
 RUN pip install --no-cache /wheels/*
 
 # CACHE BUST: forzar reconstrucción de esta capa (actualizado 17-dic-2025 18:10)
-ARG CACHE_BUST=20251217_1810
+ARG CACHE_BUST=20251217_2008
 RUN echo "🔄 Cache bust: ${CACHE_BUST}" > /tmp/cache_bust.txt
 
 # Copiar código del backend y frontend pre-compilado
