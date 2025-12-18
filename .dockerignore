@@ -37,10 +37,10 @@ __pycache__/
 .DS_Store
 
 # Documentation (no necesaria en runtime, EXCEPTO LOLA_FLASH.md)
+# IMPORTANTE: El orden importa. Primero excluimos, luego incluimos la excepción
+*.md
 docs/
 !docs/LOLA_FLASH.md
-*.md
-!README.md
 
 # Tests (no necesarios en producción)
 tests/

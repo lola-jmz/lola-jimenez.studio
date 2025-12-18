@@ -9,6 +9,8 @@
             "Dockerfile",
             "docs/LOLA_FLASH.md",
             "frontend/**/*",
+            "!frontend/out/**/*",
+            "!frontend/.next/**/*",
             "!**/*.md",
             "!docs/**/*",
             "!.guus/**/*",

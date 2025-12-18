@@ -1,15 +1,9 @@
 # =============================================================================
 # Dockerfile - Lola Jiménez Studio (Backend + Frontend)
 # =============================================================================
-# FORCE REBUILD - Invalida cache Docker completamente
-ARG FORCE_REBUILD=20251217_1601
-# =============================================================================
 
 # Stage 1: Build Python Dependencies
 FROM python:3.11-slim AS python-builder
-
-# Echo para confirmar rebuild en logs
-RUN echo "🔄 FORCE REBUILD: ${FORCE_REBUILD}"
 
 WORKDIR /app
 
@@ -41,9 +35,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=python-builder /wheels /wheels
 RUN pip install --no-cache /wheels/*
 
-# CACHE BUST: forzar reconstrucción de esta capa (actualizado 15-dic-2025 2:40 AM)
-ARG CACHE_BUST=20251215_0240
-RUN echo "Cache bust: ${CACHE_BUST}" > /tmp/cache_bust.txt
+# CACHE BUST: forzar reconstrucción de esta capa (actualizado 17-dic-2025 18:10)
+ARG CACHE_BUST=20251217_1810
+RUN echo "🔄 Cache bust: ${CACHE_BUST}" > /tmp/cache_bust.txt
 
 # Copiar código del backend y frontend pre-compilado
 COPY --chown=appuser:appuser . .

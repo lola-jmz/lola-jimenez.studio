@@ -48,20 +48,50 @@ class ConnectionManager:
             del self.active_connections[user_id]
             logger.info(f"❌ Usuario {user_id} desconectado. Total conexiones: {len(self.active_connections)}")
 
-    async def send_personal_message(self, message: str, user_id: str):
+    async def send_personal_message(
+        self, 
+        message: str, 
+        user_id: str, 
+        msg_type: str = "text",
+        image_url: str = None,
+        caption: str = None
+    ):
         """
         Envía un mensaje JSON a un usuario específico.
         
         Args:
             message: Texto del mensaje
             user_id: ID del usuario destinatario
+            msg_type: Tipo de mensaje ("text", "image", "typing")
+            image_url: URL de imagen (solo para msg_type="image")
+            caption: Texto acompañante de imagen (opcional)
         """
         if user_id in self.active_connections:
             try:
                 websocket = self.active_connections[user_id]
-                # Enviar como JSON para compatibilidad con frontend
-                await websocket.send_json({"content": message})
-                logger.debug(f"Mensaje enviado a {user_id}: {message[:50]}...")
+                
+                # Construir payload según tipo
+                if msg_type == "image":
+                    payload = {
+                        "type": "image",
+                        "url": image_url,
+                        "caption": caption or message,
+                        "content": message  # Fallback para compatibilidad
+                    }
+                elif msg_type == "typing":
+                    payload = {
+                        "type": "typing",
+                        "is_typing": True
+                    }
+                else:
+                    # Tipo texto por defecto
+                    payload = {
+                        "type": "text",
+                        "content": message
+                    }
+                
+                await websocket.send_json(payload)
+                logger.debug(f"Mensaje [{msg_type}] enviado a {user_id}: {message[:50]}...")
             except Exception as e:
                 logger.error(f"Error enviando mensaje a {user_id}: {e}")
                 self.disconnect(user_id)

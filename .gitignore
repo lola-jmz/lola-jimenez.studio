@@ -111,3 +111,7 @@ oci_key.pem
 
 # Jupyter Notebooks
 *.ipynb_checkpoints/
+
+# Next.js build artifacts (generated files, should not be tracked)
+frontend/out/
+frontend/.next/

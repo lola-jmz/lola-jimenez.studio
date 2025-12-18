@@ -5,6 +5,9 @@ export interface Message {
   content: string;
   isBot: boolean;
   timestamp: Date;
+  type?: "text" | "image";  // Tipo de mensaje
+  imageUrl?: string;        // URL de imagen (si type === "image")
+  caption?: string;         // Caption de imagen
 }
 
 export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
@@ -31,12 +34,26 @@ export function useWebSocket(userId: string) {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+
+        // Detectar tipo de mensaje (text, image, typing)
+        const msgType = data.type || "text";
+
+        if (msgType === "typing") {
+          // Indicador de escritura - no agregar a mensajes
+          console.log("🔄 Lola está escribiendo...");
+          return;
+        }
+
         const botMessage: Message = {
           id: crypto.randomUUID(),
-          content: data.content,
+          content: data.content || data.caption || "",
           isBot: true,
           timestamp: new Date(),
+          type: msgType,
+          imageUrl: data.url,           // URL de imagen si es tipo image
+          caption: data.caption,        // Caption si aplica
         };
+
         setMessages((prev) => [...prev, botMessage]);
       } catch (error) {
         console.error("Error parseando mensaje:", error);
