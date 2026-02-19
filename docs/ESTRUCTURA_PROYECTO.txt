@@ -1,0 +1,154 @@
+.
+├── analyze_consistency.py
+├── api
+│   ├── endpoints
+│   ├── __init__.py
+│   ├── run_fastapi_backup_20251211_015848.py
+│   ├── run_fastapi_basic.py
+│   ├── run_fastapi.py
+│   └── websocket
+│       └── connection_manager.py
+├── BugRailway.md
+├── CLAUDE.md
+├── config
+│   └── database_schema.sql
+├── core
+│   ├── core_handler_backup_20251211_015848.py
+│   ├── core_handler.py
+│   ├── __init__.py
+│   └── state_machine.py
+├── database
+│   ├── database_pool.py
+│   ├── __init__.py
+│   ├── migrations
+│   │   ├── 003_create_conversation_state_backup.sql
+│   │   └── add_user_identifier.sql
+│   └── repositories
+│       ├── __init__.py
+│       └── payment_repository.py
+├── DEPLOY_README.md
+├── Dockerfile
+├── docs
+│   ├── ESTRUCTURA_PROYECTO.txt
+│   ├── HLD_Bot_Lola.md
+│   ├── LOLA_FLASH.md
+│   └── OCR-Vision
+│       ├── files
+│       │   ├── lola_bot_analisis_completo.md
+│       │   └── ocr_local_sin_apis.md
+│       ├── files.zip
+│       ├── guia_deepseek_impl.md
+│       ├── Resumen_entregables.md
+│       └── scripts_auxiliares.md
+├── frontend
+│   ├── app
+│   │   ├── favicon.ico
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── CLAUDE.md
+│   ├── components
+│   │   ├── lola-jimenez-studio-landing-page.tsx
+│   │   └── ui
+│   │       ├── button.tsx
+│   │       ├── card.tsx
+│   │       ├── dialog.tsx
+│   │       ├── input.tsx
+│   │       └── separator.tsx
+│   ├── components.json
+│   ├── docs
+│   │   └── brand_guideline.md
+│   ├── eslint.config.mjs
+│   ├── ESTRUCTURA_FRONTEND.md
+│   ├── lib
+│   │   ├── useWebSocket.ts
+│   │   └── utils.ts
+│   ├── next.config.ts
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.mjs
+│   ├── PROGRESS.md
+│   ├── public
+│   │   ├── file.svg
+│   │   ├── globe.svg
+│   │   ├── images
+│   │   │   ├── about.webp
+│   │   │   ├── hero.webp
+│   │   │   ├── portafolio-1.webp
+│   │   │   ├── portafolio-2.webp
+│   │   │   ├── portafolio-3.webp
+│   │   │   ├── portafolio-4.webp
+│   │   │   ├── portafolio-5.webp
+│   │   │   └── portafolio-6.webp
+│   │   ├── next.svg
+│   │   ├── vercel.svg
+│   │   └── window.svg
+│   ├── README.md
+│   └── tsconfig.json
+├── GEMINI.md
+├── GEMINOIDE-TEMP.md
+├── INTERCOM.md
+├── lola_consolidated_master.json
+├── mcp-server
+│   ├── config.py
+│   ├── exports
+│   ├── README.md
+│   ├── requirements.txt
+│   ├── server.py
+│   ├── sync_credentials.sh
+│   ├── testing-notes.md
+│   ├── test_mcp_server.py
+│   └── tools
+│       ├── analyze_conversation.py
+│       ├── detect_red_flags.py
+│       ├── export_data.py
+│       ├── get_metrics.py
+│       ├── __init__.py
+│       └── test_personality.py
+├── PROMPT_REVERSE_ENGINEERING_LOLA.md
+├── PROYECTO_LOLA_EXPLICADO.md
+├── RAILWAY
+│   ├── interfaz_texto.md
+│   └── RAILWAY_CACHE_CORRECTION.md
+├── railway.json
+├── RAILWAY-temporal
+│   ├── interfaz_texto.md
+│   ├── RAILWAY_DEBUG_CASOS.md
+│   └── VISUAL
+│       ├── Railway_1.png
+│       ├── Railway_2.png
+│       ├── Railway_3.png
+│       ├── Railway_4.png
+│       ├── Railway_5.png
+│       └── Railway_6.png
+├── railway.toml
+├── README_CHARACTER.md
+├── README.md
+├── REPORTE_HALLAZGOS_27_IMAGENES.md
+├── requirements.txt
+├── ROADMAP.md
+├── scripts
+│   ├── import_tinder_context.py
+│   ├── import_tinder_context_standalone.py
+│   └── test_image_upload.py
+├── services
+│   ├── audio_transcriber.py
+│   ├── backblaze_b2.py
+│   ├── content_delivery.py
+│   ├── error_handler.py
+│   ├── __init__.py
+│   ├── message_buffer_optimized.py
+│   ├── payment_validator_local.py
+│   ├── payment_validator.py
+│   ├── security.py
+│   └── telegram_notifier.py
+├── storage
+│   ├── __init__.py
+│   └── redis_store.py
+├── TECHNICAL_SYSTEM_SPECIFICATION.md
+├── tests
+│   └── verify_setup.py
+└── utils
+    └── __init__.py
+
+31 directories, 121 files

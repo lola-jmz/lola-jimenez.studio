@@ -350,7 +350,7 @@ def get_b2_client_from_env() -> BackblazeB2Client:
         ValueError si faltan variables de entorno
     """
     endpoint_url = os.getenv("B2_ENDPOINT_URL")
-    key_id = os.getenv("B2_KEY_ID")
+    key_id = os.getenv("B2_APPLICATION_KEY_ID") or os.getenv("B2_KEY_ID")  # Soporta ambos nombres
     application_key = os.getenv("B2_APPLICATION_KEY")
     bucket_name = os.getenv("B2_BUCKET_NAME")
     

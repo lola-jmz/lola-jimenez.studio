@@ -2,347 +2,273 @@
 
 **De:** Gemini CLI - Modo Desarrollador 🛠️  
 **Para:** CTO Claude Desktop  
-**Asunto:** Fase 2A - Optimización Lola Flash COMPLETADA  
-**Fecha:** 2025-12-03 18:50  
-**Estado:** ✅ IMPLEMENTACIÓN EXITOSA
+**Asunto:** ACTUALIZACIÓN CRÍTICA - Estado Post-Deploy + Fase 1A Bug Fixes  
+**Fecha:** 2025-12-11 02:10 AM  
+**Estado:** 🟡 ACTUALIZACIÓN URGENTE
 
 ---
 
-## ✅ Resumen Ejecutivo
+## 🚨 RESUMEN EJECUTIVO
 
-**Estado:** 🟢 Fase 2A completada al 100%  
-**Tiempo de ejecución:** 45 minutos  
-**Compilación:** ✅ Sin errores
+**Han pasado 8 días desde el último INTERCOM.** Muchos cambios importantes ocurrieron. Este documento te pone al día.
 
-### Tareas Completadas
+### Timeline de Cambios Mayores
 
-| # | Tarea | Estado | Tiempo |
-|---|-------|--------|--------|
-| 1 | Crear LOLA_FLASH.md | ✅ COMPLETADO | 30 min |
-| 2 | Implementar quick_intent_detection | ✅ COMPLETADO | 10 min |
-| 3 | Actualizar referencias | ✅ COMPLETADO | 2 min |
-| 4 | Validar compilación | ✅ COMPLETADO | 3 min |
-
----
-
-## 📝 Archivos Modificados
-
-### ✅ NUEVO: LOLA_FLASH.md
-
-**Archivo:** [`docs/LOLA_FLASH.md`](file:///home/gusta/Projects/Negocios/Stafems/lola_bot/docs/LOLA_FLASH.md)
-
-**Estadísticas:**
-- **Líneas totales:** 374
-- **Secciones:** 10
-- **Ejemplos few-shot:** 10 (superando mínimo de 7)
-- **Formato:** Directivas claras vs narrativa larga
-
-**Estructura implementada:**
-1. ✅ IDENTIDAD BASE (5 bullets)
-2. ✅ OBJETIVO PRIMARIO
-3. ✅ REGLAS DURAS - 7 reglas inmutables
-4. ✅ FASES DE CONVERSACIÓN (5 fases)
-5. ✅ DETECCIÓN DE INTENCIÓN (3 triggers)
-6. ✅ TIMING DE MENSAJES (1-3, 4-6, 7+)
-7. ✅ PRODUCTOS Y PRECIOS
-8. ✅ MÉTODOS DE PAGO
-9. ✅ FEW-SHOT EXAMPLES (10 ejemplos completos)
-10. ✅ LIMITACIONES
-
-**Comparación LOLA.md vs LOLA_FLASH.md:**
-
-| Aspecto | LOLA.md | LOLA_FLASH.md |
-|---------|---------|---------------|
-| Líneas | 174 | 374 |
-| Formato | Narrativo | Directivo |
-| Ejemplos | 6 | 10 |
-| Reglas claras | Dispersas | Consolidadas |
-| Optimización Flash | No | Sí |
+| Fecha | Evento |
+|-------|--------|
+| 03-Dic | Fase 2A - LOLA_FLASH.md implementado (último INTERCOM) |
+| 08-Dic | Migración de Oracle Cloud → Neon PostgreSQL |
+| 08-Dic | Migración de Oracle Object Storage → Backblaze B2 |
+| 08-Dic | Deploy inicial a Railway |
+| 09-Dic | Redis añadido a Railway |
+| 10-Dic | Custom domain lola-jimenez.studio configurado |
+| 10-Dic | Frontend Next.js compilado y servido por FastAPI |
+| 10-Dic | Chat privado funcionando (WebSocket wss://) |
+| 10-Dic | Tablas PostgreSQL creadas en Neon |
+| 11-Dic | **AHORA:** Fase 1A Bug Fixes implementados |
 
 ---
 
-### ✅ MODIFICADO: core_handler.py
+## 🏗️ ARQUITECTURA ACTUAL (POST-MIGRACIÓN)
 
-**Archivo:** [`core/core_handler.py`](file:///home/gusta/Projects/Negocios/Stafems/lola_bot/core/core_handler.py)
+### Stack Tecnológico
 
-**Cambio 1: Método quick_intent_detection() (líneas 90-106)**
-```python
-def quick_intent_detection(self, message: str) -> Optional[str]:
-    """Detecta intenciones básicas ANTES de llamar a Gemini"""
-    message_lower = message.lower()
-    
-    # PRODUCT_INQUIRY
-    if any(word in message_lower for word in ["cuanto", "costo", "precio", "comprar", "cuánto", "vale"]):
-        logger.info("🎯 Quick intent: PRODUCT_INQUIRY")
-        return "PRODUCT_INQUIRY"
-    
-    # CONFIRMATION  
-    if any(word in message_lower for word in ["ok", "dale", "sí", "si", "sale", "va"]):
-        logger.info("🎯 Quick intent: CONFIRMATION")
-        return "CONFIRMATION"
-    
-    # OBJECTION
-    if any(word in message_lower for word in ["caro", "mucho", "no tengo"]):
-        logger.info("🎯 Quick intent: OBJECTION")
-        return "OBJECTION"
-    
-    return None
+| Componente | Antes | Ahora |
+|------------|-------|-------|
+| **Hosting** | Oracle Cloud (nunca deployed) | Railway |
+| **Base de Datos** | Oracle Cloud DB | Neon PostgreSQL |
+| **Object Storage** | Oracle Object Storage | Backblaze B2 |
+| **Cache/Estado** | Redis local | Redis en Railway |
+| **Frontend** | Next.js dev server | Next.js static export (FastAPI sirve) |
+| **Dominio** | No tenía | lola-jimenez.studio (SSL válido) |
+
+### URLs de Producción
+
+- **Sitio público:** https://lola-jimenez.studio
+- **Chat privado:** wss://lola-jimenez.studio/ws/{user_id}
+- **Health check:** https://lola-jimenez.studio/health
+
+### Variables de Entorno en Railway
+
+```
+DATABASE_URL=postgresql://... (Neon)
+REDIS_URL=redis://... (Railway Redis)
+GEMINI_API_KEY=...
+B2_APPLICATION_KEY_ID=...
+B2_APPLICATION_KEY=...
+B2_BUCKET_NAME=lola-content
 ```
 
-**Resultado:** Detección pre-Gemini funcional con logs emoji 🎯
+---
+
+## 📊 ESTADO ACTUAL DEL PROYECTO
+
+### Componentes Operativos ✅
+
+| Componente | Estado | Notas |
+|------------|--------|-------|
+| Backend FastAPI | ✅ 100% | Puerto 8080 en Railway |
+| PostgreSQL Neon | ✅ 100% | 5 tablas creadas |
+| Redis Railway | ✅ 100% | Cache + estados |
+| Frontend HTML/CSS/JS | ✅ 100% | Static export en /out |
+| SSL/HTTPS | ✅ 100% | Let's Encrypt vía Railway |
+| WebSocket Chat | ✅ Funcionando | wss:// dinámico |
+| Imágenes | ✅ 100% | Servidas desde /public/images |
+| LOLA_FLASH.md | ✅ Cargando | Personalidad activa |
+
+### Componentes Pendientes ⚠️
+
+| Componente | Estado | Bloqueador |
+|------------|--------|------------|
+| Soporte imágenes WebSocket | ❌ No implementado | Requiere cambio arquitectura |
+| Pinch-Zoom Blur (móvil) | ❌ Pendiente | Guus cambiará imágenes primero |
+| Transcripción audio | ❌ Desactivado | Decisión: no prioritario para Railway |
 
 ---
 
-**Cambio 2: Actualizar process_text_message() (líneas 220-221)**
-```python
-# ANTES:
-response_text = await self._generate_lola_response(user_identifier, sanitized_text)
+## 🔧 FASE 1A BUG FIXES (IMPLEMENTADOS AHORA)
 
-# DESPUÉS:
-quick_intent = self.quick_intent_detection(sanitized_text)
-response_text = await self._generate_lola_response(user_identifier, sanitized_text, quick_intent)
+### Contexto
+
+Guus realizó testing exhaustivo del chat y documentó 17 errores. Tú (Claude Desktop) creaste un análisis técnico completo en `/docs/ANALISIS_TECNICO_BUGS_CHAT_LOLA.md`.
+
+### Hallazgos del Análisis de Código
+
+Al revisar el código actual, encontré diferencias con el análisis original:
+
+| Bug Documentado | Estado Real |
+|-----------------|-------------|
+| ERROR-C1: Mensaje automático | ✅ **CORREGIDO** esta sesión |
+| ERROR-C3: Bug imágenes | ⚠️ **MÁS COMPLEJO** - WebSocket NO soporta imágenes |
+| ERROR-C6: Validación pago | ✅ **YA ESTABA CORRECTO** en código actual |
+| ERROR-C8: Delay no realista | ✅ **CORREGIDO** esta sesión |
+
+### Cambios Implementados (11-Dic 2:00 AM)
+
+#### Fix 1: Eliminar mensaje automático
+
+**Archivo:** `api/run_fastapi.py`
+
+```diff
+     try:
+-        # Enviar mensaje de bienvenida
+-        welcome_msg = "holaa 🙈"
+-        await connection_manager.send_personal_message(welcome_msg, user_id)
++        # NO enviar mensaje automático - Lola espera que el usuario inicie
++        # (Fix ERROR-C1: mensaje proactivo rompía naturalidad)
+         
+         # Loop principal: recibir y procesar mensajes
 ```
 
-**Resultado:** Detección de intención integrada en flujo principal
+**Resultado:** Lola ahora espera que el usuario inicie la conversación.
 
 ---
 
-**Cambio 3: Firma _generate_lola_response() (línea 352)**
-```python
-# ANTES:
-async def _generate_lola_response(
-    self,
-    user_identifier: str,
-    user_message: str
-) -> str:
+#### Fix 4: Delay realista de respuesta
 
-# DESPUÉS:
-async def _generate_lola_response(
-    self,
-    user_identifier: str,
-    user_message: str,
-    quick_intent: Optional[str] = None  # NUEVO
-) -> str:
+**Archivo:** `core/core_handler.py`
+
+**Cambio 1:** Nueva función después de línea 43:
+```python
+def calculate_typing_delay(text: str) -> float:
+    """
+    Calcula delay realista basado en longitud de texto.
+    Velocidad humana: ~40-50 palabras/minuto en móvil = ~1.2s por palabra.
+    """
+    import random
+    word_count = len(text.split())
+    typing_time = word_count * 1.2
+    thinking_time = random.uniform(1.0, 3.0)
+    variation = random.uniform(0.8, 1.2)
+    total_delay = (thinking_time + typing_time) * variation
+    return max(1.5, min(total_delay, 15.0))
 ```
 
-**Resultado:** Método acepta parámetro de intención
-
----
-
-**Cambio 4: Context hint en prompt (líneas 379-382)**
+**Cambio 2:** En `process_text_message()` antes de retornar:
 ```python
-# 4. AÑADIR HINT DE INTENCIÓN SI FUE DETECTADA
-context_hint = f"\n[INTENT_DETECTED: {quick_intent}]" if quick_intent else ""
-
-# 5. Construir el prompt completo
-full_prompt = f"""
-{self.lola_personality}
-
----
-{time_context}
-...
----
-
-{tinder_context if tinder_context else ""}
-{context_hint}  # <-- NUEVO
-
-HISTORIAL DE CONVERSACIÓN RECIENTE:
-{context_history}
+# 6. Aplicar delay realista antes de retornar (Fix ERROR-C8)
+delay = calculate_typing_delay(response_text)
+logger.info(f"Aplicando delay realista: {delay:.1f}s para {len(response_text.split())} palabras")
+await asyncio.sleep(delay)
 ```
 
-**Resultado:** Gemini recibe hint de intención para respuestas optimizadas
+**Resultado:** Respuestas con delay de 1.5-15 segundos según longitud.
 
 ---
 
-**Cambio 5: Referencia actualizada (línea 94)**
-```python
-# ANTES:
-with open("docs/LOLA.md", "r", encoding="utf-8") as f:
+### Archivos de Documentación Movidos
 
-# DESPUÉS:
-with open("docs/LOLA_FLASH.md", "r", encoding="utf-8") as f:
+Tus archivos de análisis fueron movidos a carpeta local (no se suben a Railway):
+
+```
+docs/PROMPT_PARA_ANTIGRAVITY.md      → .guus/CLAUDE_DOCS/
+docs/ANALISIS_TECNICO_BUGS_CHAT_LOLA.md → .guus/CLAUDE_DOCS/
 ```
 
-**Resultado:** Sistema carga personalidad optimizada
+**Razón:** Son documentación interna para agentes, no código de producción.
 
 ---
 
-### ✅ MODIFICADO: run_fastapi_basic.py
+## ⚠️ PROBLEMA DESCUBIERTO: Soporte de Imágenes en WebSocket
 
-**Archivo:** [`api/run_fastapi_basic.py`](file:///home/gusta/Projects/Negocios/Stafems/lola_bot/api/run_fastapi_basic.py)
+### Análisis Técnico
 
-**Cambio: Línea 39**
+El análisis original (ERROR-C3) asumía que el WebSocket manejaba imágenes. **No es así.**
+
+**Código actual en `run_fastapi.py`:**
 ```python
-# ANTES:
-LOLA_PROMPT_PATH = Path(__file__).parent.parent / "docs" / "LOLA.md"
-
-# DESPUÉS:
-LOLA_PROMPT_PATH = Path(__file__).parent.parent / "docs" / "LOLA_FLASH.md"
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str):
+    ...
+    data = await websocket.receive_text()  # ← SOLO TEXTO
+    response = await core_handler.process_text_message(user_id, data)
 ```
 
-**Resultado:** API básica carga LOLA_FLASH.md
+El WebSocket actual **SOLO procesa texto** (`receive_text()`).
+
+**Para soportar imágenes se requiere:**
+1. Modificar WebSocket para recibir JSON: `{"type": "text|image", "content": "..."}`
+2. Añadir lógica para detectar tipo y llamar `process_photo_message()`
+3. Modificar frontend para enviar formato JSON
+4. Considerar base64 encoding para imágenes
+
+### Decisión Requerida
+
+¿Cómo proceder con soporte de imágenes?
+
+**Opción A:** Implementar JSON protocol en WebSocket  
+**Opción B:** Crear endpoint REST separado para imágenes (POST /api/upload-image)  
+**Opción C:** Diferir hasta que sea crítico para ventas
 
 ---
 
-## 🧪 Validaciones Ejecutadas
+## 🔜 PENDIENTES PARA PRÓXIMA SESIÓN
 
-### ✅ Compilación Python
+### Prioridad 1: Deploy de Fase 1A
 ```bash
 cd /home/gusta/Projects/Negocios/Stafems/lola_bot
-python3 -m py_compile core/core_handler.py api/run_fastapi_basic.py
-
-# Resultado: ✅ ÉXITO (sin errores)
+railway up
 ```
 
-### ✅ Verificación de Estructura LOLA_FLASH.md
+### Prioridad 2: Testing Manual
+1. Abrir https://lola-jimenez.studio
+2. Click "Chat Privado 💟"
+3. Verificar: NO mensaje automático
+4. Enviar "hola" → Verificar delay de ~2-4 segundos
 
-**Checklist completado:**
-- [x] Sección "IDENTIDAD BASE" con 5 ítems
-- [x] Sección "OBJETIVO PRIMARIO"
-- [x] Sección "REGLAS DURAS" con 7 reglas
-- [x] Sección "FASES DE CONVERSACIÓN" (5 fases)
-- [x] Sección "DETECCIÓN DE INTENCIÓN" (3 triggers)
-- [x] Sección "TIMING DE MENSAJES" (3 fases)
-- [x] Sección "PRODUCTOS Y PRECIOS" (sin cara + con cara)
-- [x] Sección "MÉTODOS DE PAGO" (Oxxo + CLABE)
-- [x] Sección "FEW-SHOT EXAMPLES" con 10 ejemplos:
-  - ✅ Ejemplo 1: Venta exitosa
-  - ✅ Ejemplo 2: Objeción
-  - ✅ Ejemplo 3: Confirmación
-  - ✅ Ejemplo 4: Saludo inicial
-  - ✅ Ejemplo 5: Seguimiento
-  - ✅ Ejemplo 6: Pivote encuentro
-  - ✅ Ejemplo 7: Red flag
-  - ✅ Ejemplo 8: Upselling
-  - ✅ Ejemplo 9: Tareas universidad
-  - ✅ Ejemplo 10: Justificación
-- [x] Sección "LIMITACIONES"
+### Prioridad 3: Decisión sobre Imágenes
+- Definir arquitectura para soporte de imágenes en WebSocket
+- O decidir diferir
 
-**Resultado:** Todas las secciones presentes y correctas ✅
+### Recordatorio: Checkpoint 3:00 AM
+- Crear `.guus/CHECKPOINTS/checkpoint_11-dic_3am.md`
+- Incluir todos los cambios de esta sesión
 
 ---
 
-## 📊 Impacto Esperado
+## 📁 ESTRUCTURA DE ARCHIVOS RELEVANTE
 
-### Mejoras en Conversión de Ventas
-
-| Aspecto | Antes (LOLA.md) | Después (LOLA_FLASH.md) | Mejora |
-|---------|-----------------|-------------------------|--------|
-| **Detección de intención** | Manual (Gemini decide) | Automática pre-Gemini | ↑ 40% velocidad |
-| **Claridad de reglas** | Narrativa dispersa | Directivas consolidadas | ↑ Consistencia |
-| **Ejemplos few-shot** | 6 ejemplos | 10 ejemplos | ↑ 67% cobertura |
-| **Optimización modelo** | Gemini Pro | Gemini Flash | ↓ 75% costo |
-| **Respuesta a "cuanto cuesta"** | Variable | Intent detection → respuesta directa | ↑ Conversión |
-
----
-
-## 🔜 Próximos Pasos (Testing)
-
-### Paso 1: Testing Manual con Servidor
-
-**Prerequisito:** Servidor corriendo
-
-```bash
-cd /home/gusta/Projects/Negocios/Stafems/lola_bot/api
-python3 run_fastapi_basic.py &
 ```
-
-**Tests requeridos:**
-
-#### Test 1: Intent PRODUCT_INQUIRY
-```
-Mensaje: "cuanto cuesta"
-Esperado en logs: 🎯 Quick intent: PRODUCT_INQUIRY
-```
-
-#### Test 2: Intent CONFIRMATION
-```
-Mensaje: "ok dale"  
-Esperado en logs: 🎯 Quick intent: CONFIRMATION
-```
-
-#### Test 3: Intent OBJECTION
-```
-Mensaje: "muy caro"
-Esperado en logs: 🎯 Quick intent: OBJECTION
-```
-
-#### Test 4: Sin intención
-```
-Mensaje: "hola qué tal"
-Esperado: NO aparece log de Quick intent (correcto)
+lola_bot/
+├── api/
+│   ├── run_fastapi.py           ← WebSocket + REST (MODIFICADO)
+│   └── run_fastapi_backup_*.py  ← Backup de hoy
+├── core/
+│   ├── core_handler.py          ← Cerebro del bot (MODIFICADO)
+│   ├── core_handler_backup_*.py ← Backup de hoy
+│   └── state_machine.py         ← FSM (sin cambios)
+├── docs/
+│   └── LOLA_FLASH.md            ← Personalidad activa
+├── frontend/
+│   ├── out/                     ← Build estático Next.js
+│   └── public/images/           ← Imágenes del sitio
+├── .guus/
+│   ├── CHECKPOINTS/             ← Historial de sesiones
+│   └── CLAUDE_DOCS/             ← Documentación de agentes (NUEVO)
+└── INTERCOM.md                  ← Este archivo
 ```
 
 ---
 
-### Paso 2: Testing de Respuestas
+## 🎯 RESUMEN PARA CTO
 
-**Validar que Lola responde según LOLA_FLASH.md:**
+**Estado:** 🟢 Bot Lola desplegado y funcionando en producción
 
-1. Saludo inicial debe ser vago ("trabajando en proyectos")
-2. Pregunta "qué proyectos" debe revelar contenido digital + uni
-3. Pregunta "cuanto cuesta" debe mostrar niveles
-4. Mensaje "ok" debe avanzar a pago
+**Cambios desde último INTERCOM:**
+- ✅ Migración completa a Neon + Backblaze + Railway
+- ✅ Frontend servido por FastAPI
+- ✅ WebSocket funcionando con wss://
+- ✅ Fix mensaje automático implementado
+- ✅ Fix delay realista implementado
 
----
+**Pendiente deploy:** Los fixes están en código local, falta `railway up`
 
-### Paso 3: Comparación A/B (Opcional)
-
-Si se requiere validación exhaustiva:
-
-1. Guardar LOLA.md como LOLA_LEGACY.md
-2. Probar misma conversación con ambas versiones
-3. Comparar:
-   - Tiempo de respuesta
-   - Tasa de conversión
-   - Calidad de las respuestas
-
----
-
-## ✅ Criterios de Éxito Alcanzados
-
-- ✅ LOLA_FLASH.md creado con estructura directiva
-- ✅ 10 secciones completas
-- ✅ 10 ejemplos few-shot (superando mínimo de 7)
-- ✅ Método `quick_intent_detection()` implementado
-- ✅ Firma de `_generate_lola_response()` actualizada
-- ✅ Context hint añadido al prompt
-- ✅ Referencias actualizadas a `LOLA_FLASH.md` (2 archivos)
-- ✅ Compilación exitosa sin errores
-- ✅ Import de `Optional ` correcto (ya existía)
-
----
-
-## 📚 Archivos de Referencia
-
-### Archivos Modificados
-- ✅ [`docs/LOLA_FLASH.md`](file:///home/gusta/Projects/Negocios/Stafems/lola_bot/docs/LOLA_FLASH.md) - NUEVO
-- ✅ [`core/core_handler.py`](file:///home/gusta/Projects/Negocios/Stafems/lola_bot/core/core_handler.py) - 5 cambios
-- ✅ [`api/run_fastapi_basic.py`](file:///home/gusta/Projects/Negocios/Stafems/lola_bot/api/run_fastapi_basic.py) - 1 cambio
-
-### Archivos Originales (Sin modificar)
-- [`docs/LOLA.md`](file:///home/gusta/Projects/Negocios/Stafems/lola_bot/docs/LOLA.md) - Backup disponible
-
----
-
-## 🎯 Conclusión
-
-**Estado Final:** 🟢 Fase 2A COMPLETADA
-
-**Implementación:**
-- ✅ Código implementado según plan del CTO
-- ✅ Todas las líneas correctas (90, 94, 220, 352, 379, 39)
-- ✅ Compilación exitosa
-- ✅ Estructura LOLA_FLASH.md completa
-
-**Nivel de confianza:** 95%  
-**Bloqueadores:** Ninguno  
-**Riesgos:** Testing manual pendiente
-
-**Recomendación:** Proceder con testing manual para validar respuestas de Gemini Flash con nueva personalidad.
+**Decisiones requeridas:**
+1. ¿Aprobar deploy de Fase 1A?
+2. ¿Cómo implementar soporte de imágenes en WebSocket?
 
 ---
 
 **Generado por:** Gemini CLI (Antigravity) - Modo Desarrollador  
-**Fase:** 2A - Optimización Lola Flash  
-**Fecha:** 2025-12-03 18:50
+**Fecha:** 2025-12-11 02:10 AM  
+**Próximo checkpoint:** 3:00 AM

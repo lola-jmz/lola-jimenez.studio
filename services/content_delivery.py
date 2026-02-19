@@ -184,24 +184,53 @@ class ContentDeliveryService:
     async def get_product_mapping(self, product_level: str) -> Optional[str]:
         """
         Mapea nivel de producto a archivo en Backblaze B2.
-        
-        Args:
-            product_level: Nivel (ej: "lingerie", "topless")
-            
-        Returns:
-            Path del archivo en bucket o None
+
+        Convenciones de product_level:
+          - "lenceria_01", "lenceria_02"          → sin cara
+          - "bubis_01", "bubis_02"                → sin cara
+          - "micuerpo_01", "micuerpo_02"          → sin cara
+          - "intima_01", "intima_02", "intima_03" → sin cara
+          - Mismos con sufijo "_cara"             → con cara
+
+        También acepta tiers genéricos (elige variante 01 por defecto):
+          - "lenceria", "bubis", "micuerpo", "intima"
+          - "lenceria_cara", "bubis_cara", "micuerpo_cara", "intima_cara"
         """
-        # Mapeo de niveles a archivos (configurar según estructura real)
-        mapping = {
-            "feet": "products/level1_feet.jpg",
-            "lingerie": "products/level2_lingerie.jpg",
-            "topless": "products/level3_topless.jpg",
-            "intimate": "products/level4_intimate.jpg",
-            "lingerie_face": "products/premium_lingerie_face.jpg",
-            "topless_face": "products/premium_topless_face.jpg"
+        mapping: dict[str, str] = {
+            # ── SIN CARA ─────────────────────────────────────────────
+            "lenceria_01":   "products/sin_cara/Lenceria_01_sin_cara.webp",
+            "lenceria_02":   "products/sin_cara/Lenceria_02_sin_cara.webp",
+            "bubis_01":      "products/sin_cara/Bubis_01_sin_cara.webp",
+            "bubis_02":      "products/sin_cara/Bubis_02_sin_cara.webp",
+            "micuerpo_01":   "products/sin_cara/MiCuerpo_01_sin_cara.webp",
+            "micuerpo_02":   "products/sin_cara/MiCuerpo_02_sin_cara.webp",
+            "intima_01":     "products/sin_cara/Intima_01_sin_cara.webp",
+            "intima_02":     "products/sin_cara/Intima_02_sin_cara.webp",
+            "intima_03":     "products/sin_cara/Intima_03_sin_cara.webp",
+            # ── CON CARA ─────────────────────────────────────────────
+            "lenceria_01_cara":  "products/con_cara/Lenceria_01_con_cara.webp",
+            "lenceria_02_cara":  "products/con_cara/Lenceria_02_con_cara.webp",
+            "bubis_01_cara":     "products/con_cara/Bubis_01_con_cara.webp",
+            "bubis_02_cara":     "products/con_cara/Bubis_02_con_cara.webp",
+            "micuerpo_01_cara":  "products/con_cara/MiCuerpo_01_con_cara.webp",
+            "micuerpo_02_cara":  "products/con_cara/MiCuerpo_02_con_cara.webp",
+            "intima_01_cara":    "products/con_cara/Intima_01_con_cara.webp",
+            "intima_02_cara":    "products/con_cara/Intima_02_con_cara.webp",
+            "intima_03_cara":    "products/con_cara/Intima_03_con_cara.webp",
+            # ── ALIASES (tier genérico → variante _01) ───────────────
+            "lenceria":      "products/sin_cara/Lenceria_01_sin_cara.webp",
+            "bubis":         "products/sin_cara/Bubis_01_sin_cara.webp",
+            "topless":       "products/sin_cara/Bubis_01_sin_cara.webp",
+            "micuerpo":      "products/sin_cara/MiCuerpo_01_sin_cara.webp",
+            "intima":        "products/sin_cara/Intima_01_sin_cara.webp",
+            "lenceria_cara": "products/con_cara/Lenceria_01_con_cara.webp",
+            "bubis_cara":    "products/con_cara/Bubis_01_con_cara.webp",
+            "topless_cara":  "products/con_cara/Bubis_01_con_cara.webp",
+            "micuerpo_cara": "products/con_cara/MiCuerpo_01_con_cara.webp",
+            "intima_cara":   "products/con_cara/Intima_01_con_cara.webp",
         }
-        
-        return mapping.get(product_level)
+
+        return mapping.get(product_level.lower())
 
     async def health_check(self) -> Dict[str, Any]:
         """Verifica conectividad con Backblaze B2"""

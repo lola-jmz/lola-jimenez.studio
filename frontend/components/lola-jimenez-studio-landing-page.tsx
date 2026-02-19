@@ -10,46 +10,52 @@ import { Separator } from "@/components/ui/separator";
 import { useWebSocket } from "@/lib/useWebSocket";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-// Componente de Imagen Protegida REAL (Anti-Zoom que SÍ funciona)
+// Componente de Imagen Protegida — Anti-Zoom + Anti-Print + Anti-Drag
 const ImageWithBlur = ({ src, alt, className }: { src: string, alt: string, className?: string }) => {
   const [isZoomed, setIsZoomed] = useState(false)
 
   useEffect(() => {
-    // Detectar zoom del navegador
     const detectZoom = () => {
       const zoomLevel = Math.round(window.devicePixelRatio * 100)
-      setIsZoomed(zoomLevel > 100) // Si zoom > 100%, activar blur
+      setIsZoomed(zoomLevel > 125) // blur activo cuando zoom > 125%
     }
-
     detectZoom()
     window.addEventListener('resize', detectZoom)
-
     return () => window.removeEventListener('resize', detectZoom)
   }, [])
 
   return (
-    <div className={`relative overflow-hidden ${className}`}>
+    <div
+      className={`lola-protected-img relative overflow-hidden select-none ${className}`}
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      {/* Imagen con pointer-events desactivados para bloquear drag/right-click directo */}
       <img
         src={src}
         alt={alt}
-        className="w-full h-full object-cover transition-all duration-300 hover:blur-sm"
+        className="w-full h-full object-cover transition-all duration-500"
         loading="lazy"
-        onContextMenu={(e) => e.preventDefault()}
         draggable={false}
         style={{
-          filter: isZoomed ? 'blur(8px) grayscale(50%)' : 'none',
+          filter: isZoomed ? 'blur(12px) grayscale(70%)' : 'none',
           WebkitUserSelect: 'none',
           userSelect: 'none',
+          pointerEvents: 'none',
           touchAction: 'none',
-          imageRendering: 'auto',
-          transition: 'filter 0.3s ease'
+          transition: 'filter 0.4s ease',
         }}
       />
-      {/* Watermark invisible anti-piratería */}
+      {/* Capa transparente encima que intercepta todos los eventos del mouse */}
+      <div
+        className="absolute inset-0"
+        onContextMenu={(e) => e.preventDefault()}
+        style={{ backgroundColor: 'transparent', cursor: 'default' }}
+      />
+      {/* Watermark diagonal sutil */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(233,30,99,0.03) 35px, rgba(233,30,99,0.03) 70px)',
+          background: 'repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(233,30,99,0.05) 35px, rgba(233,30,99,0.05) 70px)',
         }}
       />
     </div>
@@ -199,63 +205,113 @@ export function LolaJiménezStudioLandingPage() {
         </div>
       )}
 
-      <section id="inicio" className="relative pt-32 pb-24 md:pt-40 md:pb-32 overflow-hidden">
+      <section id="inicio" className="relative pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden">
         <motion.div
           className="absolute inset-0 bg-gradient-to-br from-primary to-secondary"
-          style={{
-            opacity: heroOpacity,
-            scale: heroScale
-          }}
+          style={{ opacity: heroOpacity, scale: heroScale }}
         />
         <div className="max-w-6xl mx-auto px-6 relative z-10">
-          <div className="flex flex-col md:flex-row items-center gap-12">
-            <div className="flex-shrink-0">
-              <ImageWithBlur
-                alt="Lola Jiménez"
-                src="/images/hero.webp"
-                className="w-64 h-64 rounded-full border-4 border-white shadow-2xl"
-              />
-            </div>
+          {/* Mobile: texto arriba, imagen abajo — Desktop: texto izq, imagen der */}
+          <div className="flex flex-col md:flex-row items-center gap-10 md:gap-14">
             <div className="flex-1 text-center md:text-left">
-              <h1 className="font-heading text-5xl md:text-6xl font-bold text-white mb-6 font-serif italic">
-                Bienvenidos a mi mundo creativo
-              </h1>
-              <p className="text-xl text-white/90 mb-8 font-light">
-                Donde la creatividad y la conexión se encuentran
-              </p>
-              <Button
-                size="lg"
-                onClick={() => scrollToSection('sobre-mi')}
-                className="bg-accent text-accent-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 transition-all duration-300 px-8 py-6 text-lg font-semibold shadow-lg"
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7 }}
+                className="font-heading text-5xl md:text-6xl font-bold text-white mb-6 font-serif italic"
               >
-                Conóceme
-                <Icon icon="solar:heart-bold" className="size-5" />
-              </Button>
+                Bienvenidos a mi mundo creativo
+              </motion.h1>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="text-xl text-white/90 mb-8 font-light"
+              >
+                Donde la creatividad y la conexión se encuentran
+              </motion.p>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <Button
+                  size="lg"
+                  onClick={() => scrollToSection('sobre-mi')}
+                  className="bg-accent text-accent-foreground hover:bg-white hover:text-primary hover:scale-105 transition-all duration-300 px-8 py-6 text-lg font-semibold shadow-lg"
+                >
+                  Conóceme
+                  <Icon icon="solar:heart-bold" className="size-5" />
+                </Button>
+              </motion.div>
             </div>
+            {/* Imagen hero 5:4 horizontal — borde translúcido blanco */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              className="flex-shrink-0 w-full md:w-[400px] lg:w-[460px] p-[3px] rounded-2xl shadow-2xl"
+              style={{ background: 'rgba(255,255,255,0.25)' }}
+            >
+              <div className="rounded-[14px] overflow-hidden">
+                <ImageWithBlur
+                  alt="Lola Jiménez"
+                  src="/images/hero.webp"
+                  className="w-full aspect-[5/4]"
+                />
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
       <section id="sobre-mi" className="py-20 bg-background">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="font-heading text-4xl md:text-5xl font-bold text-primary mb-12 text-center md:text-left font-serif italic">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-heading text-4xl md:text-5xl font-bold text-primary mb-12 text-center md:text-left font-serif italic"
+          >
             Sobre mí
-          </h2>
+          </motion.h2>
           <div className="grid md:grid-cols-2 gap-12 mb-16">
-            <div>
-              <ImageWithBlur
-                alt="About Lola"
-                src="/images/about.webp"
-                className="w-full aspect-[3/4] rounded-lg shadow-lg border-4 border-primary"
-              />
-            </div>
-            <div className="flex flex-col justify-center">
+            {/* Foto de perfil circular */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="flex flex-col items-center gap-4"
+            >
+              {/* Anillo gradiente fucsia→violet */}
+              <div
+                className="p-[3px] rounded-full shadow-2xl"
+                style={{ background: 'linear-gradient(135deg, #E91E63, #9C27B0, #E91E63)' }}
+              >
+                <div className="rounded-full overflow-hidden w-56 h-56 md:w-72 md:h-72">
+                  <ImageWithBlur
+                    alt="Lola Jiménez — foto de perfil"
+                    src="/images/about.webp"
+                    className="w-full h-full"
+                  />
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground font-medium tracking-wider">✦ Lola Jiménez Studio ✦</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex flex-col justify-center"
+            >
               <p className="text-lg text-foreground leading-relaxed mb-8">
                 Soy Lola Jiménez, creadora de contenido apasionada por el arte y las conexiones
                 auténticas. Mi espacio es donde la creatividad cobra vida a través de conversaciones
                 íntimas, contenido exclusivo y experiencias personalizadas que van más allá de lo
                 superficial.
               </p>
-            </div>
+            </motion.div>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             <Card className="bg-card/50 border-2 border-primary p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
@@ -292,54 +348,74 @@ export function LolaJiménezStudioLandingPage() {
           </div>
         </div>
       </section>
-      <section id="portfolio" className="py-20 bg-card/20">
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="font-heading text-4xl md:text-5xl font-bold text-primary mb-12 text-center font-serif italic">
+      <section id="portfolio" className="py-16 md:py-24 bg-gradient-to-b from-white to-pink-50/40">
+        <div className="max-w-6xl mx-auto px-4 md:px-6">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="font-heading text-4xl md:text-5xl font-bold text-primary mb-2 text-center font-serif italic"
+          >
             Mi Portfolio
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="overflow-hidden border-4 border-primary rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 cursor-pointer">
-              <ImageWithBlur
-                alt="Portfolio 1"
-                src="/images/portafolio-1.webp"
-                className="w-full aspect-[3/4]"
-              />
-            </Card>
-            <Card className="overflow-hidden border-4 border-secondary rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-secondary/30 transition-all duration-300 cursor-pointer">
-              <ImageWithBlur
-                alt="Portfolio 2"
-                src="/images/portafolio-2.webp"
-                className="w-full aspect-[3/4]"
-              />
-            </Card>
-            <Card className="overflow-hidden border-4 border-primary rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 cursor-pointer">
-              <ImageWithBlur
-                alt="Portfolio 3"
-                src="/images/portafolio-3.webp"
-                className="w-full aspect-[3/4]"
-              />
-            </Card>
-            <Card className="overflow-hidden border-4 border-secondary rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-secondary/30 transition-all duration-300 cursor-pointer">
-              <ImageWithBlur
-                alt="Portfolio 4"
-                src="/images/portafolio-4.webp"
-                className="w-full aspect-[3/4]"
-              />
-            </Card>
-            <Card className="overflow-hidden border-4 border-primary rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 cursor-pointer">
-              <ImageWithBlur
-                alt="Portfolio 5"
-                src="/images/portafolio-5.webp"
-                className="w-full aspect-[3/4]"
-              />
-            </Card>
-            <Card className="overflow-hidden border-4 border-secondary rounded-xl hover:scale-105 hover:shadow-2xl hover:shadow-secondary/30 transition-all duration-300 cursor-pointer">
-              <ImageWithBlur
-                alt="Portfolio 6"
-                src="/images/portafolio-6.webp"
-                className="w-full aspect-[3/4]"
-              />
-            </Card>
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.15 }}
+            className="text-center text-muted-foreground mb-10 md:mb-14 text-sm tracking-widest uppercase"
+          >
+            ✦ Contenido exclusivo ✦
+          </motion.p>
+
+          {/*
+            Layout mobile-first:
+            — móvil  : 2 cols, img 1 ocupa full width (col-span-2, featured)
+            — tablet : 3 cols, todos 1 col
+            — desktop: 3 cols, img 1 + img 6 con span especial para jerarquía editorial
+          */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 lg:gap-4">
+            {[
+              { n: 1, mobile: 'col-span-2 md:col-span-1' },
+              { n: 2, mobile: 'col-span-1' },
+              { n: 3, mobile: 'col-span-1' },
+              { n: 4, mobile: 'col-span-1' },
+              { n: 5, mobile: 'col-span-1' },
+              { n: 6, mobile: 'col-span-2 md:col-span-1 lg:col-span-1' },
+              { n: 7, mobile: 'col-span-1' },
+              { n: 8, mobile: 'col-span-1' },
+            ].map(({ n, mobile }, idx) => (
+              <motion.div
+                key={n}
+                initial={{ opacity: 0, y: 28 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ delay: idx * 0.07, duration: 0.5, ease: 'easeOut' }}
+                className={`group relative overflow-hidden rounded-2xl cursor-pointer ${mobile}`}
+                style={{
+                  /* Gradiente borde 2px fucsia→violet */
+                  background: `linear-gradient(135deg, #E91E63 0%, #9C27B0 50%, #E91E63 100%)`,
+                  padding: '2px',
+                }}
+              >
+                <div className="relative h-full rounded-[14px] overflow-hidden bg-pink-50">
+                  <ImageWithBlur
+                    alt={`Portfolio ${n}`}
+                    src={`/images/portafolio-${n}.webp`}
+                    className="w-full aspect-[2/3]"
+                  />
+                  {/* Hover overlay con icono ✦ */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-5 pointer-events-none">
+                    <span
+                      className="text-white text-3xl drop-shadow-lg"
+                      style={{ textShadow: '0 0 20px rgba(233,30,99,0.8)' }}
+                    >
+                      ✦
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>

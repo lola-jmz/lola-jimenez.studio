@@ -115,3 +115,14 @@ oci_key.pem
 # Next.js build artifacts (generated files, should not be tracked)
 frontend/out/
 frontend/.next/
+
+# --- AGREGADO PARA ARREGLAR ANTIGRAVITY ---
+
+# Dependencias de Node.js (CRÍTICO: Esto elimina miles de archivos del indexador)
+node_modules/
+frontend/node_modules/
+mcp-server/node_modules/
+
+# Basura de Railway y temporales detectados
+RAILWAY-temporal/
+.checkpoints/

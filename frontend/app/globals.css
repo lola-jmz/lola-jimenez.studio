@@ -94,3 +94,14 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ── Protección anti-print / anti-screenshot vía DevTools Print ── */
+@media print {
+  .lola-protected-img {
+    filter: blur(20px) grayscale(100%) !important;
+    opacity: 0.1 !important;
+  }
+  .lola-protected-img * {
+    visibility: hidden !important;
+  }
+}

@@ -23,7 +23,7 @@
         "startCommand": "sh -c 'uvicorn api.run_fastapi:app --host 0.0.0.0 --port ${PORT:-8000}'",
         "preDeployCommand": "python -m py_compile api/run_fastapi.py core/core_handler.py services/payment_validator.py services/content_delivery.py",
         "healthcheckPath": "/health",
-        "healthcheckTimeout": 30,
+        "healthcheckTimeout": 300,
         "restartPolicyType": "ON_FAILURE",
         "restartPolicyMaxRetries": 5,
         "overlapSeconds": 15,
