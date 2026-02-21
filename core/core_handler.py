@@ -580,8 +580,8 @@ Tu respuesta (como Lola):
 
             logger.info(f"✅ Producto entregado a usuario {user_identifier}")
             
-            # 5. Retornar mensaje con URL
-            return f"listo. espero y sí te haya gustado 🫣. aquí está: {delivery_result['url']}\n\nsi luego quieres subir de nivel me avisas haha."
+            # 5. Retornar mensaje con URL empaquetada para el frontend
+            return f"listo. espero y sí te haya gustado 🫣. [DELIVERY:{delivery_result['url']}]\n\nsi luego quieres subir de nivel me avisas haha."
         
         except Exception as e:
             logger.error(f"Error entregando producto a usuario {user_id}: {e}")

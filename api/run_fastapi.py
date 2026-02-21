@@ -299,34 +299,56 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 # Procesar mensaje de texto normal
                 response = await core_handler.process_text_message(user_id, content)
                 
-                # Detectar si la respuesta incluye una URL de contenido (entrega de producto)
-                if "lola-content" in response or "b2.backblazeb2.com" in response:
-                    # Extraer URL de la respuesta
-                    import re
-                    url_match = re.search(r'https://[^\s]+', response)
-                    if url_match:
-                        image_url = url_match.group(0)
-                        # Enviar texto primero
-                        caption = response.replace(image_url, "").strip()
-                        await connection_manager.send_personal_message(
-                            message="mira lo que tengo para ti 😏",
-                            user_id=user_id,
-                            msg_type="text"
-                        )
-                        # Luego enviar imagen inline
-                        await connection_manager.send_personal_message(
-                            message=caption,
-                            user_id=user_id,
-                            msg_type="image",
-                            image_url=image_url,
-                            caption="espero te guste 🫣"
-                        )
-                    else:
-                        # No hay URL, enviar como texto normal
-                        await connection_manager.send_personal_message(response, user_id)
-                else:
-                    # Respuesta de texto normal
+                # Detectar etiquetas visuales de Lola ([IMG:...] o [DELIVERY:...])
+                import re
+                
+                # Extraer Delivery URL
+                delivery_match = re.search(r'\[DELIVERY:(.*?)\]', response)
+                delivery_url = None
+                if delivery_match:
+                    delivery_url = delivery_match.group(1)
+                    response = response.replace(delivery_match.group(0), "").strip()
+
+                # Detectar Menús
+                has_menu_sin_cara = "[IMG:MENU_SIN_CARA]" in response
+                has_menu_con_cara = "[IMG:MENU_CON_CARA]" in response
+                
+                if has_menu_sin_cara:
+                    response = response.replace("[IMG:MENU_SIN_CARA]", "").strip()
+                if has_menu_con_cara:
+                    response = response.replace("[IMG:MENU_CON_CARA]", "").strip()
+
+                # Enviar texto limpiado (solo si Lola escribió algo más allá de los tags)
+                if response:
                     await connection_manager.send_personal_message(response, user_id)
+                
+                # Enviar los flyers de menú (si corresponden)
+                if has_menu_sin_cara:
+                    await connection_manager.send_personal_message(
+                        message="Opciones sin cara 🙈", 
+                        user_id=user_id,
+                        msg_type="image",
+                        image_url="/images/menu-sin-cara.webp",
+                        caption="Opciones sin mi carita"
+                    )
+                if has_menu_con_cara:
+                    await connection_manager.send_personal_message(
+                        message="Opciones con cara 🤫", 
+                        user_id=user_id,
+                        msg_type="image",
+                        image_url="/images/menu-con-cara.webp",
+                        caption="Opciones exclusivas con mi carita"
+                    )
+                    
+                # Enviar la entrega final del producto comprado
+                if delivery_url:
+                    await connection_manager.send_personal_message(
+                        message="Tu contenido 🎁", 
+                        user_id=user_id,
+                        msg_type="image",
+                        image_url=delivery_url,
+                        caption="espero te encante 🔥"
+                    )
             
             elif msg_type == "image":
                 # Usuario envió imagen (probablemente comprobante de pago)

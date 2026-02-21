@@ -11,7 +11,7 @@ import { useWebSocket } from "@/lib/useWebSocket";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Componente de Imagen Protegida — Anti-Zoom + Anti-Print + Anti-Drag
-const ImageWithBlur = ({ src, alt, className }: { src: string, alt: string, className?: string }) => {
+const ImageWithBlur = ({ src, alt, className, imgClassName = "w-full h-full object-cover" }: { src: string, alt: string, className?: string, imgClassName?: string }) => {
   const [isZoomed, setIsZoomed] = useState(false)
 
   useEffect(() => {
@@ -33,7 +33,7 @@ const ImageWithBlur = ({ src, alt, className }: { src: string, alt: string, clas
       <img
         src={src}
         alt={alt}
-        className="w-full h-full object-cover transition-all duration-500"
+        className={`${imgClassName} transition-all duration-500`}
         loading="lazy"
         draggable={false}
         style={{
@@ -369,40 +369,32 @@ export function LolaJiménezStudioLandingPage() {
           </motion.p>
 
           {/*
-            Layout mobile-first:
-            — móvil  : 2 cols, img 1 ocupa full width (col-span-2, featured)
-            — tablet : 3 cols, todos 1 col
-            — desktop: 3 cols, img 1 + img 6 con span especial para jerarquía editorial
+            Layout mampostería (Pinterest style):
+            — móvil  : 2 cols
+            — desktop: 3 cols
+            Las imágenes respetan su ratio real.
           */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 lg:gap-4">
-            {[
-              { n: 1, mobile: 'col-span-2 md:col-span-1' },
-              { n: 2, mobile: 'col-span-1' },
-              { n: 3, mobile: 'col-span-1' },
-              { n: 4, mobile: 'col-span-1' },
-              { n: 5, mobile: 'col-span-1' },
-              { n: 6, mobile: 'col-span-2 md:col-span-1 lg:col-span-1' },
-              { n: 7, mobile: 'col-span-1' },
-              { n: 8, mobile: 'col-span-1' },
-            ].map(({ n, mobile }, idx) => (
+          <div className="columns-2 md:columns-3 gap-3 md:gap-4 space-y-3 md:space-y-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((n, idx) => (
               <motion.div
                 key={n}
                 initial={{ opacity: 0, y: 28 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-60px' }}
                 transition={{ delay: idx * 0.07, duration: 0.5, ease: 'easeOut' }}
-                className={`group relative overflow-hidden rounded-2xl cursor-pointer ${mobile}`}
+                className="group relative overflow-hidden rounded-2xl cursor-pointer break-inside-avoid shadow-sm"
                 style={{
                   /* Gradiente borde 2px fucsia→violet */
                   background: `linear-gradient(135deg, #E91E63 0%, #9C27B0 50%, #E91E63 100%)`,
                   padding: '2px',
                 }}
               >
-                <div className="relative h-full rounded-[14px] overflow-hidden bg-pink-50">
+                <div className="relative rounded-[14px] overflow-hidden bg-pink-50 flex">
                   <ImageWithBlur
                     alt={`Portfolio ${n}`}
                     src={`/images/portafolio-${n}.webp`}
-                    className="w-full aspect-[2/3]"
+                    className="w-full"
+                    imgClassName="w-full h-auto object-contain block"
                   />
                   {/* Hover overlay con icono ✦ */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-5 pointer-events-none">
