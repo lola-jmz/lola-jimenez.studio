@@ -16,12 +16,29 @@ const ImageWithBlur = ({ src, alt, className, imgClassName = "w-full h-full obje
 
   useEffect(() => {
     const detectZoom = () => {
-      const zoomLevel = Math.round(window.devicePixelRatio * 100)
-      setIsZoomed(zoomLevel > 125) // blur activo cuando zoom > 125%
+      if (window.visualViewport) {
+        setIsZoomed(window.visualViewport.scale > 1.25)
+      } else {
+        setIsZoomed(false)
+      }
     }
     detectZoom()
-    window.addEventListener('resize', detectZoom)
-    return () => window.removeEventListener('resize', detectZoom)
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', detectZoom)
+      window.visualViewport.addEventListener('scroll', detectZoom)
+    } else {
+      window.addEventListener('resize', detectZoom)
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', detectZoom)
+        window.visualViewport.removeEventListener('scroll', detectZoom)
+      } else {
+        window.removeEventListener('resize', detectZoom)
+      }
+    }
   }, [])
 
   return (
