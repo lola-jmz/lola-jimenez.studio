@@ -77,6 +77,19 @@ async def lifespan(app: FastAPI):
             logger.info("✅ Schema DB verificado/aplicado automáticamente")
         except Exception as e:
             logger.error(f"❌ Error aplicando schema DB: {e}")
+
+    # 1.6 Aplicar migraciones adicionales
+    migrations_dir = Path(__file__).parent.parent / "database" / "migrations"
+    if migrations_dir.exists():
+        for migration_file in sorted(migrations_dir.glob("*.sql")):
+            try:
+                with open(migration_file, "r", encoding="utf-8") as f:
+                    sql = f.read()
+                async with db_pool.pool.acquire() as conn:
+                    await conn.execute(sql)
+                logger.info(f"✅ Migración aplicada: {migration_file.name}")
+            except Exception as e:
+                logger.error(f"❌ Error aplicando migración {migration_file.name}: {e}")
     
     # 2. Conectar a Redis con respaldo PostgreSQL
     redis_store = RedisStateStore(
