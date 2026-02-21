@@ -339,6 +339,14 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                         image_url="/images/menu-con-cara.webp",
                         caption="Opciones exclusivas con mi carita"
                     )
+                    # Enviar el hook/regalito gratuito automáticamente al usuario
+                    await connection_manager.send_personal_message(
+                        message="¡Y un regalito para que te animes! 🔥", 
+                        user_id=user_id,
+                        msg_type="image",
+                        image_url="/images/hook_01_free.webp",
+                        caption="Solo una probadita de lo que te espera..."
+                    )
                     
                 # Enviar la entrega final del producto comprado
                 if delivery_url:
