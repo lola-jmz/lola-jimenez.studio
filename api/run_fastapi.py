@@ -66,6 +66,18 @@ async def lifespan(app: FastAPI):
     await db_pool.initialize()
     logger.info("✅ PostgreSQL conectado")
     
+    # 1.5 Auto-inicializar Base de Datos si está vacía
+    schema_path = Path(__file__).parent.parent / "config" / "database_schema.sql"
+    if schema_path.exists():
+        try:
+            with open(schema_path, "r", encoding="utf-8") as f:
+                sql = f.read()
+            async with db_pool.pool.acquire() as conn:
+                await conn.execute(sql)
+            logger.info("✅ Schema DB verificado/aplicado automáticamente")
+        except Exception as e:
+            logger.error(f"❌ Error aplicando schema DB: {e}")
+    
     # 2. Conectar a Redis con respaldo PostgreSQL
     redis_store = RedisStateStore(
         redis_url=REDIS_URL,
