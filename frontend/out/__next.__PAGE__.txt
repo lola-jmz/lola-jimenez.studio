@@ -1,6 +1,6 @@
 1:"$Sreact.fragment"
-2:I[21882,["/_next/static/chunks/2ba97da0887a3c36.js"],"LolaJiménezStudioLandingPage"]
+2:I[21882,["/_next/static/chunks/aa15541195a25c23.js"],"LolaJiménezStudioLandingPage"]
 3:I[13078,["/_next/static/chunks/6fb61dbf828999c6.js"],"OutletBoundary"]
 4:"$Sreact.suspense"
-0:{"buildId":"plWB1M4PWzlZ-iCFSWJyT","rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/_next/static/chunks/2ba97da0887a3c36.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"loading":null,"isPartial":false}
+0:{"buildId":"PX2mrcUJbGOFfZ8P1WLrY","rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/_next/static/chunks/aa15541195a25c23.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"loading":null,"isPartial":false}
 5:null
