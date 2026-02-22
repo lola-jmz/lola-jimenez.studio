@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
@@ -79,7 +80,8 @@ const ImageWithBlur = ({ src, alt, className, imgClassName = "w-full h-full obje
   )
 }
 
-// Componente de Imagen de Chat — Sin protecciones, con visor fullscreen para zoom
+// Componente de Imagen de Chat — Sin protecciones, visor via Portal para escapar
+// el containing block del DialogContent (transform: translate(-50%,-50%) permanente)
 const ChatImage = ({ src, alt, caption }: { src: string; alt: string; caption?: string }) => {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -94,27 +96,57 @@ const ChatImage = ({ src, alt, caption }: { src: string; alt: string; caption?: 
       />
       {caption && <p className="text-sm italic">{caption}</p>}
 
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center"
-          onClick={() => setIsOpen(false)}
-          style={{ touchAction: 'pinch-zoom' }}
-        >
-          <img
-            src={src}
-            alt={alt}
-            className="max-w-full max-h-full object-contain"
-            style={{ touchAction: 'pinch-zoom' }}
-            onClick={(e) => e.stopPropagation()}
-          />
-          <button
-            className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/40 rounded-full w-10 h-10 flex items-center justify-center text-xl"
+      {isOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
             onClick={() => setIsOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 99999,
+              backgroundColor: 'rgba(0,0,0,0.92)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              touchAction: 'pinch-zoom',
+            }}
           >
-            ✕
-          </button>
-        </div>
-      )}
+            <img
+              src={src}
+              alt={alt}
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+                touchAction: 'pinch-zoom',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setIsOpen(false)}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: 'rgba(0,0,0,0.5)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '2.5rem',
+                height: '2.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '1.25rem',
+                cursor: 'pointer',
+              }}
+            >
+              ✕
+            </button>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }
