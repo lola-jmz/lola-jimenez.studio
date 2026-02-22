@@ -79,6 +79,46 @@ const ImageWithBlur = ({ src, alt, className, imgClassName = "w-full h-full obje
   )
 }
 
+// Componente de Imagen de Chat — Sin protecciones, con visor fullscreen para zoom
+const ChatImage = ({ src, alt, caption }: { src: string; alt: string; caption?: string }) => {
+  const [isOpen, setIsOpen] = useState(false)
+
+  return (
+    <div className="space-y-1">
+      <img
+        src={src}
+        alt={alt}
+        className="w-full rounded-lg shadow-md cursor-zoom-in"
+        style={{ touchAction: 'pinch-zoom' }}
+        onClick={() => setIsOpen(true)}
+      />
+      {caption && <p className="text-sm italic">{caption}</p>}
+
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center"
+          onClick={() => setIsOpen(false)}
+          style={{ touchAction: 'pinch-zoom' }}
+        >
+          <img
+            src={src}
+            alt={alt}
+            className="max-w-full max-h-full object-contain"
+            style={{ touchAction: 'pinch-zoom' }}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/40 rounded-full w-10 h-10 flex items-center justify-center text-xl"
+            onClick={() => setIsOpen(false)}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function LolaJiménezStudioLandingPage() {
   const [chatOpen, setChatOpen] = useState(false)
   const [inputValue, setInputValue] = useState('')
@@ -617,16 +657,11 @@ export function LolaJiménezStudioLandingPage() {
                 >
                   {/* Renderizar imagen inline si es tipo image */}
                   {msg.type === 'image' && msg.imageUrl ? (
-                    <div className="space-y-2">
-                      <ImageWithBlur
-                        src={msg.imageUrl}
-                        alt={msg.caption || "Imagen de Lola"}
-                        className="max-w-full rounded-lg shadow-md"
-                      />
-                      {msg.caption && (
-                        <p className="text-sm italic">{msg.caption}</p>
-                      )}
-                    </div>
+                    <ChatImage
+                      src={msg.imageUrl}
+                      alt={msg.caption || "Imagen de Lola"}
+                      caption={msg.caption}
+                    />
                   ) : (
                     msg.content
                   )}
