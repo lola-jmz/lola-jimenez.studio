@@ -105,6 +105,7 @@ const ChatImage = ({ src, alt, caption }: { src: string; alt: string; caption?: 
               position: 'fixed',
               inset: 0,
               zIndex: 99999,
+              pointerEvents: 'auto',
               backgroundColor: 'rgba(0,0,0,0.92)',
               display: 'flex',
               alignItems: 'center',
