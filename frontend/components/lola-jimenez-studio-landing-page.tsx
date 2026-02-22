@@ -55,7 +55,7 @@ const ImageWithBlur = ({ src, alt, className, imgClassName = "w-full h-full obje
         loading="lazy"
         draggable={false}
         style={{
-          filter: 'none',
+          filter: isZoomed ? 'blur(12px) grayscale(70%)' : 'none',
           WebkitUserSelect: 'none',
           userSelect: 'none',
           pointerEvents: 'none',
