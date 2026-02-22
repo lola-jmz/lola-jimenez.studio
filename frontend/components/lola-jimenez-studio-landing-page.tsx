@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { createPortal } from 'react-dom'
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
@@ -82,75 +82,143 @@ const ImageWithBlur = ({ src, alt, className, imgClassName = "w-full h-full obje
 
 // Componente de Imagen de Chat — Sin protecciones, visor via Portal para escapar
 // el containing block del DialogContent (transform: translate(-50%,-50%) permanente)
-const ChatImage = ({ src, alt, caption }: { src: string; alt: string; caption?: string }) => {
-  const [isOpen, setIsOpen] = useState(false)
+const ChatImage = ({ src, alt, caption }: { src: string; alt?: string; caption?: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
 
-  return (
-    <div className="space-y-1">
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const initialPinchDistRef = useRef<number | null>(null);
+  const lastTapRef = useRef<number>(0);
+
+  const handleClose = useCallback(() => {
+    setIsOpen(false);
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  }, []);
+
+  const getDistance = (touches: React.TouchList) => {
+    return Math.hypot(
+      touches[0].clientX - touches[1].clientX,
+      touches[0].clientY - touches[1].clientY
+    );
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      initialPinchDistRef.current = getDistance(e.touches);
+    } else if (e.touches.length === 1) {
+      const now = Date.now();
+      // Double tap detector (300ms)
+      if (now - lastTapRef.current < 300) {
+        setScale(prev => (prev > 1 ? 1 : 2.5));
+        setPosition({ x: 0, y: 0 });
+        lastTapRef.current = 0; // Reset para evitar triple-tap accidental
+      } else {
+        lastTapRef.current = now;
+      }
+
+      touchStartRef.current = {
+        x: e.touches[0].clientX - position.x,
+        y: e.touches[0].clientY - position.y
+      };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && initialPinchDistRef.current !== null) {
+      const currentDist = getDistance(e.touches);
+      const diff = currentDist - initialPinchDistRef.current;
+      setScale(prev => Math.min(Math.max(1, prev + diff * 0.015), 5));
+      initialPinchDistRef.current = currentDist;
+    } else if (e.touches.length === 1 && touchStartRef.current && scale > 1) {
+      setPosition({
+        x: e.touches[0].clientX - touchStartRef.current.x,
+        y: e.touches[0].clientY - touchStartRef.current.y
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    initialPinchDistRef.current = null;
+    touchStartRef.current = null;
+    if (scale < 1) {
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    const newScale = Math.min(Math.max(1, scale - e.deltaY * 0.005), 5);
+    setScale(newScale);
+    if (newScale === 1) setPosition({ x: 0, y: 0 });
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') handleClose();
+    };
+    if (isOpen) window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, handleClose]);
+
+  if (!src) return null;
+
+  const isInteracting = touchStartRef.current !== null || initialPinchDistRef.current !== null;
+
+  const overlay = isOpen ? (
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black/92"
+      style={{
+        zIndex: 99999,
+        pointerEvents: 'auto',
+        touchAction: 'none',
+        overscrollBehavior: 'none'
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      <button
+        onClick={handleClose}
+        className="absolute top-4 right-4 p-2 bg-black/50 text-white rounded-full hover:bg-white/20 transition-colors"
+        style={{ zIndex: 99999 }}
+        aria-label="Cerrar visor"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+      </button>
       <img
         src={src}
-        alt={alt}
+        alt={alt || "Imagen del chat ampliada"}
+        draggable={false}
+        className="max-w-full max-h-full object-contain transform-gpu will-change-transform"
+        style={{
+          transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale})`,
+          transition: isInteracting ? 'none' : 'transform 0.2s ease-out',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+        }}
+      />
+    </div>
+  ) : null;
+
+  return (
+    <div className="flex flex-col gap-1">
+      <img
+        src={src}
+        alt={alt || "Thumbnail del chat"}
         className="w-full rounded-lg shadow-md cursor-zoom-in"
-        style={{ touchAction: 'pinch-zoom' }}
         onClick={() => setIsOpen(true)}
       />
-      {caption && <p className="text-sm italic">{caption}</p>}
-
-      {isOpen &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            onClick={() => setIsOpen(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 99999,
-              pointerEvents: 'auto',
-              backgroundColor: 'rgba(0,0,0,0.92)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              touchAction: 'pinch-zoom',
-            }}
-          >
-            <img
-              src={src}
-              alt={alt}
-              style={{
-                maxWidth: '100%',
-                maxHeight: '100%',
-                objectFit: 'contain',
-                touchAction: 'pinch-zoom',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            />
-            <button
-              onClick={() => setIsOpen(false)}
-              style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: 'rgba(0,0,0,0.5)',
-                border: 'none',
-                borderRadius: '50%',
-                width: '2.5rem',
-                height: '2.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontSize: '1.25rem',
-                cursor: 'pointer',
-              }}
-            >
-              ✕
-            </button>
-          </div>,
-          document.body
-        )}
+      {caption && <span className="text-xs text-muted-foreground px-1">{caption}</span>}
+      {isOpen && typeof document !== 'undefined' && createPortal(overlay, document.body)}
     </div>
-  )
-}
+  );
+};
 
 export function LolaJiménezStudioLandingPage() {
   const [chatOpen, setChatOpen] = useState(false)
