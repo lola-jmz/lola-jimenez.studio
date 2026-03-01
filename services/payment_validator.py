@@ -169,17 +169,17 @@ class PaymentValidator:
             if not result['is_valid']:
                 logger.warning(f"⚠️ Comprobante rechazado: {result.get('reason', 'Sin razón específica')}")
             
-            # Validar que el monto coincide con niveles de contenido
-            VALID_AMOUNTS = [200, 500, 750, 350, 600]  # Niveles sin cara + premium con cara
+            # Validar que el monto sea suficiente (Bug 2 Fix)
             extracted_data = result.get("extracted_data", {})
             extracted_amount = extracted_data.get("amount", 0)
             
-            if extracted_amount and extracted_amount not in VALID_AMOUNTS:
-                logger.warning(f"Monto no válido detectado: ${extracted_amount}. Montos válidos: {VALID_AMOUNTS}")
+            min_expected = expected or 100.0
+            if extracted_amount and extracted_amount < min_expected:
+                logger.warning(f"Monto insuficiente detectado: ${extracted_amount}. Esperado: >= ${min_expected}")
                 return {
                     "is_valid": False,
                     "confidence": 0.0,
-                    "reason": f"El monto ${extracted_amount} no corresponde a ningún nivel de contenido válido",
+                    "reason": f"El monto ${extracted_amount} es menor al requerido (${min_expected})",
                     "extracted_data": extracted_data,
                     "fraud_indicators": result.get("fraud_indicators", [])
                 }
@@ -264,6 +264,10 @@ SEÑALES DE FRAUDE A DETECTAR:
 - Monto o fecha claramente alterados
 - Screenshot de otro screenshot
 - Información incompleta
+
+NOTAS IMPORTANTES SOBRE FECHAS (México/Latam):
+- Las fechas frecuentemente vienen en formato DD/MM/YYYY. (Ej: 06/02/2026 es 6 de febrero, no 2 de junio).
+- Asegúrate de interpretar correctamente el mes y el día para no marcar erróneamente una fecha válida como "fecha futura".
 
 IMPORTANTE: Si no puedes leer la imagen o es de mala calidad, marca como inválido.
 

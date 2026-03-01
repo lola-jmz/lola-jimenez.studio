@@ -285,11 +285,19 @@ class LolaCoreHandler:
                 any(kw in response_normalized for kw in payment_keywords)
             )
             
+            should_transition_to_payment = False
             if has_payment_data:
-                self.conversation_manager.handle_event(user_identifier, EventType.SOLICITAR_PAGO)
-                new_state = self.conversation_manager.get_state(user_identifier)
+                should_transition_to_payment = True
+                
+                # 🔥 FIX BUG 3: Extraer monto de la respuesta de Lola y guardarlo
+                import re
+                amount_match = re.search(r'\$\s?(\d+)', response_text)
+                if amount_match:
+                    detected_amount = float(amount_match.group(1))
+                    await self.redis_store.set_metadata(user_identifier, "expected_amount", detected_amount)
+                    logger.info(f"💰 expected_amount actualizado dinámicamente a: {detected_amount}")
+                
                 logger.info(f"🎯 PAGO DETECTADO en respuesta de Lola para {user_identifier}")
-                logger.info(f"🎯 Estado cambiado: CONVERSANDO → {new_state.value}")
                 logger.info(f"📝 Trigger encontrado en: {response_text[:100]}...")
         
         elif current_state == ConversationState.ESPERANDO_PAGO:
@@ -312,6 +320,13 @@ class LolaCoreHandler:
         delay = calculate_typing_delay(response_text)
         logger.info(f"Aplicando delay realista: {delay:.1f}s para {len(response_text.split())} palabras")
         await asyncio.sleep(delay)
+        
+        # 🔥 FIX BUG 1: Mover la transición de estado AQUÍ, DESPUÉS del delay.
+        # Así aseguramos que el mensaje del Oxxo/CLABE fue procesado en su estado original.
+        if current_state in [ConversationState.INICIO, ConversationState.CONVERSANDO] and should_transition_to_payment:
+            self.conversation_manager.handle_event(user_identifier, EventType.SOLICITAR_PAGO)
+            new_state = self.conversation_manager.get_state(user_identifier)
+            logger.info(f"🎯 Estado cambiado (diferido): CONVERSANDO → {new_state.value}")
         
         return response_text
 

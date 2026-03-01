@@ -126,3 +126,10 @@ mcp-server/node_modules/
 # Basura de Railway y temporales detectados
 RAILWAY-temporal/
 .checkpoints/
+
+# IA Agents y Workspaces paralelos (NO SUBIR A REPO/RAILWAY)
+.agent/
+.agents/
+skills-lock.json
+skills-local.json
+parallel_workspace/
