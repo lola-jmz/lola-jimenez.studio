@@ -223,6 +223,9 @@ class PaymentValidator:
 
         El prompt está diseñado para extraer datos estructurados.
         """
+        from datetime import datetime
+        today_date = datetime.now().strftime("%d/%m/%Y")
+        
         prompt = f"""
 Analiza esta imagen de comprobante de pago y responde en formato JSON.
 
@@ -266,8 +269,11 @@ SEÑALES DE FRAUDE A DETECTAR:
 - Información incompleta
 
 NOTAS IMPORTANTES SOBRE FECHAS (México/Latam):
+- HOY ES: {today_date}. Usa esta fecha como tu único marco de referencia de tiempo.
 - Las fechas frecuentemente vienen en formato DD/MM/YYYY. (Ej: 06/02/2026 es 6 de febrero, no 2 de junio).
-- Asegúrate de interpretar correctamente el mes y el día para no marcar erróneamente una fecha válida como "fecha futura".
+- No uses tu fecha de corte de entrenamiento como referencia. Hoy es estrictamente {today_date}.
+- Si la fecha del comprobante es igual a HOY o está dentro de los últimos 30 días, es VÁLIDA.
+- SÓLO marca como "fecha futura" si el día exacto extraído es mayor estricto a {today_date}.
 
 IMPORTANTE: Si no puedes leer la imagen o es de mala calidad, marca como inválido.
 
