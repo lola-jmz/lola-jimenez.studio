@@ -151,13 +151,14 @@ class EasyOCRPaymentValidator:
             
             # Validación de monto si se provee
             if expected_amount and amount:
-                if abs(amount - expected_amount) > tolerance:
+                # Permitir pagos mayores al esperado (tips/propinas o compras múltiples)
+                if amount < (expected_amount - tolerance):
                     return {
                         "is_valid": False,
                         "confidence": confidence,
-                        "reason": f"Monto incorrecto: ${amount} (Esperaba ${expected_amount})",
+                        "reason": f"Monto insuficiente: ${amount} (Esperaba mínimo ${expected_amount})",
                         "extracted_data": {"amount": amount, "bank": bank, "clabe": clabe},
-                        "needs_gemini_fallback": False # OCR leyó bien el monto, no hace falta Gemini para confirmar que está mal
+                        "needs_gemini_fallback": False # OCR leyó bien que el monto NO alcanza, no hace falta Gemini
                     }
             
             return {

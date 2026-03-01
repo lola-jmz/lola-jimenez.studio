@@ -256,8 +256,8 @@ CRITERIOS DE VALIDACIÓN:
 - ¿Es una imagen clara y legible?
 - ¿Contiene información de pago (monto, fecha, referencia)?
 - ¿Parece un comprobante real (no editado, no screenshot de baja calidad)?
-- ¿El monto coincide con lo esperado?
-{f"- Monto esperado: {expected_amount} {expected_currency}" if expected_amount else ""}
+- ¿El monto extraído es IGUAL o MAYOR al esperado (pagar de más es válido)?
+{f"- Monto mínimo esperado: {expected_amount} {expected_currency}" if expected_amount else ""}
 
 SEÑALES DE FRAUDE A DETECTAR:
 - Imagen muy borrosa o pixelada
