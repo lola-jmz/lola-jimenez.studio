@@ -273,16 +273,14 @@ class LolaCoreHandler:
             response_text = await self._generate_lola_response(user_identifier, sanitized_text, quick_intent)
             
             # 🔥 FIX v2: Detección ROBUSTA de datos de pago
-            # Buscar patrones parciales (últimos 8 dígitos) + keywords de pago
+            # Activar el estado ESPERANDO_PAGO *solo* cuando Lola da los números reales
             response_normalized = response_text.replace(" ", "").replace("-", "").lower()
             CLABE_PARTIAL = "44136159"  # Últimos 8 dígitos de CLABE
             OXXO_PARTIAL = "95348913"   # Últimos 8 dígitos de tarjeta Oxxo
-            payment_keywords = ["clabe", "oxxo", "transferencia", "deposita"]
             
             has_payment_data = (
                 CLABE_PARTIAL in response_normalized or
-                OXXO_PARTIAL in response_normalized or
-                any(kw in response_normalized for kw in payment_keywords)
+                OXXO_PARTIAL in response_normalized
             )
             
             should_transition_to_payment = False
