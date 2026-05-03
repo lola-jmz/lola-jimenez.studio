@@ -1,176 +1,107 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+'use client';
 
-export interface Message {
+import { useState, useRef, useCallback } from 'react';
+
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
+
+export interface ChatMessage {
   id: string;
   content: string;
   isBot: boolean;
+  type: 'text' | 'image';
+  imageUrl?: string;
+  caption?: string;
   timestamp: Date;
-  type?: "text" | "image";  // Tipo de mensaje
-  imageUrl?: string;        // URL de imagen (si type === "image")
-  caption?: string;         // Caption de imagen
 }
 
-export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
+interface IncomingMessage {
+  type?: string;
+  content?: string;
+  url?: string;
+  caption?: string;
+}
 
 export function useWebSocket(userId: string) {
-  const [status, setStatus] = useState<ConnectionStatus>("disconnected");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [status, setStatus] = useState<ConnectionStatus>('disconnected');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const socketRef = useRef<WebSocket | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(() => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    setStatus("connecting");
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const ws = new WebSocket(`${protocol}//${host}/ws/${userId}`);
+    setStatus('connecting');
 
-    ws.onopen = () => {
-      console.log("✅ WebSocket conectado");
-      setStatus("connected");
-    };
+    const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const host = typeof window !== 'undefined' ? window.location.host : 'localhost:8000';
+    const url = `${protocol}://${host}/ws/${userId}`;
 
-    ws.onmessage = (event) => {
+    const ws = new WebSocket(url);
+    wsRef.current = ws;
+
+    ws.onopen = () => setStatus('connected');
+
+    ws.onmessage = (event: MessageEvent) => {
       try {
-        const data = JSON.parse(event.data);
+        const data = JSON.parse(event.data as string) as IncomingMessage;
+        const msgType = data.type ?? 'text';
 
-        // Detectar tipo de mensaje (text, image, typing)
-        const msgType = data.type || "text";
-
-        if (msgType === "typing") {
-          // Indicador de escritura - no agregar a mensajes
-          console.log("🔄 Lola está escribiendo...");
-          return;
-        }
-
-        const botMessage: Message = {
+        const msg: ChatMessage = {
           id: crypto.randomUUID(),
-          content: data.content || data.caption || "",
+          content: data.content ?? '',
           isBot: true,
+          type: msgType === 'image' ? 'image' : 'text',
+          imageUrl: data.url,
+          caption: data.caption,
           timestamp: new Date(),
-          type: msgType,
-          imageUrl: data.url,           // URL de imagen si es tipo image
-          caption: data.caption,        // Caption si aplica
         };
 
-        setMessages((prev) => [...prev, botMessage]);
-      } catch (error) {
-        console.error("Error parseando mensaje:", error);
+        setMessages((prev) => [...prev, msg]);
+      } catch {
+        // ignore malformed messages
       }
     };
 
-    ws.onerror = (error) => {
-      console.error("❌ WebSocket error:", error);
-      setStatus("error");
-    };
-
-    ws.onclose = () => {
-      console.log("❌ WebSocket desconectado");
-      setStatus("disconnected");
-    };
-
-    socketRef.current = ws;
+    ws.onerror = () => setStatus('error');
+    ws.onclose = () => setStatus('disconnected');
   }, [userId]);
 
   const disconnect = useCallback(() => {
-    if (socketRef.current) {
-      socketRef.current.close();
-      socketRef.current = null;
-    }
+    wsRef.current?.close();
+    wsRef.current = null;
+    setStatus('disconnected');
   }, []);
 
-  const sendText = useCallback((content: string) => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      // Agregar mensaje del usuario a la UI
-      const userMessage: Message = {
-        id: crypto.randomUUID(),
-        content,
-        isBot: false,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, userMessage]);
+  const sendText = useCallback((text: string) => {
+    if (wsRef.current?.readyState !== WebSocket.OPEN) return;
 
-      // Enviar por WebSocket
-      socketRef.current.send(
-        JSON.stringify({
-          type: "text",
-          content,
-        })
-      );
-    }
-  }, []);
-
-  const sendImage = useCallback(async (file: File) => {
-    try {
-      setIsUploading(true);
-
-      // 1. Validar tamaño (5 MB máximo)
-      const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
-      if (file.size > MAX_SIZE) {
-        alert("La imagen es muy pesada. El límite es 5 MB.");
-        setIsUploading(false);
-        return;
-      }
-
-      // 2. Convertir a Base64
-      const base64 = await fileToBase64(file);
-
-      // 3. Agregar mensaje visual del usuario (imagen)
-      const userMessage: Message = {
-        id: crypto.randomUUID(),
-        content: "[Imagen enviada: comprobante de pago]",
-        isBot: false,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, userMessage]);
-
-      // 4. Enviar por WebSocket
-      if (socketRef.current?.readyState === WebSocket.OPEN) {
-        socketRef.current.send(
-          JSON.stringify({
-            type: "image",
-            content: base64,
-          })
-        );
-      }
-    } catch (error) {
-      console.error("Error enviando imagen:", error);
-      alert("Error al enviar la imagen. Inténtalo de nuevo.");
-    } finally {
-      setIsUploading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      disconnect();
+    const userMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      content: text,
+      isBot: false,
+      type: 'text',
+      timestamp: new Date(),
     };
-  }, [disconnect]);
+    setMessages((prev) => [...prev, userMsg]);
 
-  return {
-    status,
-    messages,
-    isUploading,
-    sendText,
-    sendImage,
-    connect,
-    disconnect,
-  };
-}
+    wsRef.current.send(JSON.stringify({ type: 'text', content: text }));
+  }, []);
 
-// Helper: Convertir archivo a Base64
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
+  const sendImage = useCallback((file: File) => {
+    if (wsRef.current?.readyState !== WebSocket.OPEN) return;
+
+    setIsUploading(true);
     const reader = new FileReader();
+
     reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-      } else {
-        reject(new Error("Error leyendo archivo"));
-      }
+      const base64 = reader.result as string;
+      wsRef.current?.send(JSON.stringify({ type: 'image', content: base64 }));
+      setIsUploading(false);
     };
-    reader.onerror = reject;
+
+    reader.onerror = () => setIsUploading(false);
     reader.readAsDataURL(file);
-  });
+  }, []);
+
+  return { status, messages, isUploading, connect, disconnect, sendText, sendImage };
 }
